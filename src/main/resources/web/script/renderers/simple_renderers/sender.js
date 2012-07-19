@@ -27,9 +27,9 @@
     return $topic.empty().append($link).append($email)
   }
 
-  dm4c.add_field_renderer('dm4.mail.sender_renderer', {
+  dm4c.add_simple_renderer('dm4.mail.sender_renderer', {
 
-    render_field: function (model, $parent) {
+    render_info: function (model, $parent) {
       var topic = model.toplevel_topic,
         sender = getSenderTopics(topic.id),
         $sender = dm4c.render.topic_list(sender)
@@ -37,7 +37,7 @@
       $parent.append($sender)
     },
 
-    render_form_element: function (model, $parent) {
+    render_form: function (model, $parent) {
       var topic = model.toplevel_topic,
         senderTopics = getSenderTopics(topic.id),
         $change = $('<button>').text('Change'),

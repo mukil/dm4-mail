@@ -97,9 +97,9 @@
     })
   }
 
-  dm4c.add_field_renderer('dm4.mail.recipient_renderer', {
+  dm4c.add_simple_renderer('dm4.mail.recipient_renderer', {
 
-    render_field: function (model, $parent) {
+    render_info: function (model, $parent) {
       var mail = model.toplevel_topic,
         recipients = getRecipientTopics(mail.id),
         $recipients = dm4c.render.topic_list(recipients)
@@ -107,7 +107,7 @@
       $parent.append($recipients)
     },
 
-    render_form_element: function (model, $parent) {
+    render_form: function (model, $parent) {
       var mail = model.toplevel_topic,
         recipients = getRecipientTopics(mail.id),
         types = dm4c.hash_by_id(getRecipientTypes()),

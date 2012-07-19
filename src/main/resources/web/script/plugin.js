@@ -1,8 +1,5 @@
 dm4c.add_plugin('dm4.mail.plugin', function () {
 
-  dm4c.load_field_renderer('/de.deepamehta.mail/script/sender_renderer.js')
-  dm4c.load_field_renderer('/de.deepamehta.mail/script/recipient_renderer.js')
-
   // --- REST ------------------------------------------------
 
   function autoComplete(term) {
