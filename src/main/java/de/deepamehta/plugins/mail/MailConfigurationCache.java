@@ -35,6 +35,8 @@ public class MailConfigurationCache {
 
     private TopicAssociation defaultSender = null;
 
+    private boolean defaultSenderIsNull = false;
+
     private final DeepaMehtaService dms;
 
     private ResultSet<Topic> recipientTypes;
@@ -71,9 +73,12 @@ public class MailConfigurationCache {
     }
 
     public TopicAssociation getDefaultSender() {
-        if (defaultSender == null) {
+        if (defaultSenderIsNull == false && defaultSender == null) {
             log.info("reveal default sender");
             defaultSender = TopicUtils.getRelatedPart(dms, getConfiguration(), SENDER);
+            if (defaultSender == null) {
+                defaultSenderIsNull = true;
+            }
         }
         return defaultSender;
     }

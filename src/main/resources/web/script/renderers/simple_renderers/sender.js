@@ -19,12 +19,14 @@
   }
 
   function updateSenderView($topic, sender, association) {
+    function click() {
+      dm4c.do_reveal_related_topic(sender.id)
+    }
     var email = association.composite['dm4.contacts.email_address'].value,
       $email = $('<span>').text('<' + email + '>'),
-      $link = dm4c.render.topic_link(sender).click(function () {
-        dm4c.show_topic(new Topic(sender), 'show', null, true)
-      })
-    return $topic.empty().append($link).append($email)
+      $icon = dm4c.render.icon_link(sender, click),
+      $link = dm4c.render.topic_link(sender, click)
+    return $topic.empty().append($icon).append($link).append($email)
   }
 
   dm4c.add_simple_renderer('dm4.mail.sender_renderer', {
@@ -40,8 +42,8 @@
     render_form: function (model, $parent) {
       var topic = model.toplevel_topic,
         senderTopics = getSenderTopics(topic.id),
-        $change = $('<button>').text('Change'),
-        $cancel = $('<button>').text('Cancel').hide(),
+        $change = dm4c.ui.button(change, 'Change').css('display', 'inline-block'),
+        $cancel = dm4c.ui.button(cancel, 'Cancel').css('display', 'inline-block'),
         $topic = $('<div>'),
         $sender = $('<div>').append($topic),
         $search = dm4c.get_plugin('dm4.mail.plugin')
@@ -55,16 +57,16 @@
             $cancel.click() // cancel after change to hide edit fields ;-)
           })
 
-      $change.click(function () {
+      function change() {
         $cancel.show()
         $search.show()
         $change.hide()
-      })
-      $cancel.click(function () {
+      }
+      function cancel() {
         $cancel.hide()
         $search.hide()
         $change.show()
-      })
+      }
 
       $.each(senderTopics, function (s, sender) { // only one sender is supported
         updateSenderView($topic, sender, getSenderAssociation(topic.id, sender.id))
@@ -73,6 +75,7 @@
       // show time
       $parent.addClass('level1').append($sender.append($search.hide()))
       $parent.after($('<div>').addClass('add-button').append($change).append($cancel))
+      $cancel.hide()
 
       return function () {
         return true // set dummy field after edit

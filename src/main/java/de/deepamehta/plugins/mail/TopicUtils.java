@@ -39,6 +39,13 @@ class TopicUtils {
     }
 
     // FIXME simplify query of association
+    public static TopicAssociation getRelatedPart(DeepaMehtaService dms,
+            String associationUri, Topic wholeTopic, Topic partTopic) {
+        Association association = dms.getAssociation(associationUri,//
+                wholeTopic.getId(), partTopic.getId(), WHOLE, PART, true, null);
+        return new TopicAssociation(association, partTopic);
+    }
+
     public static TopicAssociation getRelatedPart(DeepaMehtaService dms, Topic wholeTopic,
             String associationUri) {
         RelatedTopic partTopic = wholeTopic.getRelatedTopic(associationUri,//
@@ -46,22 +53,17 @@ class TopicUtils {
         if (partTopic == null) {
             return null;
         } else {
-            Association association = dms.getAssociation(associationUri,//
-                    wholeTopic.getId(), partTopic.getId(), WHOLE, PART, true, null);
-            return new TopicAssociation(association, partTopic);
+            return getRelatedPart(dms, associationUri, wholeTopic, partTopic);
         }
     }
 
-    // FIXME simplify query of association
     public static List<TopicAssociation> getRelatedParts(DeepaMehtaService dms, Topic wholeTopic,
             String associationUri) {
         ArrayList<TopicAssociation> parts = new ArrayList<TopicAssociation>();
         ResultSet<RelatedTopic> partTopics = wholeTopic.getRelatedTopics(associationUri,//
                 WHOLE, PART, null, false, false, 0, null);
         for (RelatedTopic partTopic : partTopics) {
-            Association association = dms.getAssociation(associationUri,//
-                    wholeTopic.getId(), partTopic.getId(), WHOLE, PART, true, null);
-            parts.add(new TopicAssociation(association, partTopic));
+            parts.add(getRelatedPart(dms, associationUri, wholeTopic, partTopic));
         }
         return parts;
     }
