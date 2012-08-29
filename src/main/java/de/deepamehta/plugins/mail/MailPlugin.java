@@ -2,6 +2,12 @@ package de.deepamehta.plugins.mail;
 
 import static de.deepamehta.plugins.mail.TopicUtils.*;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
@@ -11,6 +17,7 @@ import java.util.Map;
 import java.util.logging.Logger;
 
 import javax.mail.internet.InternetAddress;
+import javax.mail.util.ByteArrayDataSource;
 import javax.ws.rs.GET;
 import javax.ws.rs.HeaderParam;
 import javax.ws.rs.Path;
@@ -19,7 +26,12 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.WebApplicationException;
 
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.mail.EmailException;
 import org.apache.commons.mail.HtmlEmail;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
 
 import de.deepamehta.core.Association;
 import de.deepamehta.core.ResultSet;
@@ -32,11 +44,20 @@ import de.deepamehta.core.osgi.PluginActivator;
 import de.deepamehta.core.service.ClientState;
 import de.deepamehta.core.service.DeepaMehtaService;
 import de.deepamehta.core.service.Directives;
+import de.deepamehta.core.service.PluginService;
+import de.deepamehta.core.service.listener.PluginServiceArrivedListener;
+import de.deepamehta.core.service.listener.PluginServiceGoneListener;
 import de.deepamehta.core.service.listener.PostCreateTopicListener;
+import de.deepamehta.core.util.DeepaMehtaUtils;
+import de.deepamehta.plugins.files.service.FilesService;
+import de.deepamehta.plugins.mail.service.MailService;
 
 @Path("/mail")
 @Produces("application/json")
-public class MailPlugin extends PluginActivator implements PostCreateTopicListener {
+public class MailPlugin extends PluginActivator implements MailService, PostCreateTopicListener,
+        PluginServiceArrivedListener, PluginServiceGoneListener {
+
+    public static final String ATTACHMENTS = "attachments";
 
     public static final String EMAIL_ADDRESS = "dm4.contacts.email_address";
 
@@ -51,6 +72,8 @@ public class MailPlugin extends PluginActivator implements PostCreateTopicListen
     private MailConfigurationCache config = null;
 
     private Logger log = Logger.getLogger(getClass().getName());
+
+    private FilesService fileService;
 
     /**
      * Associate mail and recipient.
@@ -89,8 +112,8 @@ public class MailPlugin extends PluginActivator implements PostCreateTopicListen
                     new TopicRoleModel(recipientId, PART),//
                     new TopicRoleModel(mailId, WHOLE),//
                     new CompositeValue()//
-                            .put_ref(RECIPIENT_TYPE, type)// use the first email
-                            .put_ref(EMAIL_ADDRESS, emailAddresses.get(0).getId()));
+                            .putRef(RECIPIENT_TYPE, type)// use the first email
+                            .putRef(EMAIL_ADDRESS, emailAddresses.get(0).getId()));
             return dms.createAssociation(association, clientState);
         } catch (Exception e) {
             throw new WebApplicationException(e);
@@ -124,7 +147,7 @@ public class MailPlugin extends PluginActivator implements PostCreateTopicListen
                     new TopicRoleModel(senderId, PART),//
                     new TopicRoleModel(topicId, WHOLE),//
                     new CompositeValue()//
-                            .put_ref(EMAIL_ADDRESS, emailAddresses.get(0).getId()));
+                            .putRef(EMAIL_ADDRESS, emailAddresses.get(0).getId()));
             return dms.createAssociation(association, clientState);
         } catch (Exception e) {
             throw new WebApplicationException(e);
@@ -258,7 +281,7 @@ public class MailPlugin extends PluginActivator implements PostCreateTopicListen
                 AssociationModel association = new AssociationModel(SENDER,//
                         new TopicRoleModel(sender.getTopic().getId(), PART),//
                         new TopicRoleModel(topic.getId(), WHOLE),//
-                        new CompositeValue().put_ref(EMAIL_ADDRESS, emailAddress.getId()));
+                        new CompositeValue().putRef(EMAIL_ADDRESS, emailAddress.getId()));
                 dms.createAssociation(association, clientState);
             }
         }
@@ -285,8 +308,11 @@ public class MailPlugin extends PluginActivator implements PostCreateTopicListen
             email.setHostName(config.getSmtpHost());
             email.setFrom(sender.getAddress(), sender.getPersonal());
             email.setSubject(mail.getSubject());
-            email.setHtmlMsg(mail.getBody());
             email.setTextMsg("Your email client does not support HTML messages");
+
+            Document body = Jsoup.parse(mail.getBody());
+            embedImages(email, body);
+            email.setHtmlMsg(body.html());
 
             Map<RecipientType, List<InternetAddress>> recipients = mail.getRecipients();
             for (RecipientType type : recipients.keySet()) {
@@ -321,4 +347,76 @@ public class MailPlugin extends PluginActivator implements PostCreateTopicListen
         loadConfiguration();
     }
 
+    @Override
+    public void pluginServiceArrived(PluginService service) {
+        if (service instanceof FilesService) {
+            log.fine("file service arrived");
+            fileService = (FilesService) service;
+        }
+    }
+
+    @Override
+    public void pluginServiceGone(PluginService service) {
+        if (service == fileService) {
+            fileService = null;
+        }
+    }
+
+    /**
+     * Embed all images of body.
+     */
+    private void embedImages(HtmlEmail email, Document body) throws EmailException, IOException {
+        int count = 0;
+        for (Element image : body.getElementsByTag("img")) {
+            URL url = new URL(image.attr("src"));
+            String cid = embedImage(email, url, url.getPath() + ++count);
+            image.attr("src", "cid:" + cid);
+        }
+
+    }
+
+    /**
+     * Embed any image type (external URL, file repository and plugin resource).
+     * 
+     * @return CID of embedded image
+     */
+    private String embedImage(HtmlEmail email, URL url, String name) throws EmailException,
+            IOException {
+        if (DeepaMehtaUtils.isDeepaMehtaURL(url)) {
+            String path = fileService.getRepositoryPath(url);
+            if (path != null) { // repository link
+                log.fine("embed repository image " + path);
+                return email.embed(fileService.getFile(path));
+            } else { // plugin resource
+                path = url.getPath();
+                String pluginUri = path.substring(1, path.indexOf("/", 1));
+                path = "/web" + path.substring(path.indexOf("/", 1));
+                log.fine("embed image resource " + path + " of plugin " + pluginUri);
+                String type = getMimeType(pluginUri, path);
+                InputStream resource = dms.getPlugin(pluginUri).getResourceAsStream(path);
+                return email.embed(new ByteArrayDataSource(resource, type), name);
+            }
+        } else { // external URL
+            log.fine("embed external image " + url);
+            return email.embed(url, name);
+        }
+    }
+
+    // FIXME simplify MIME type determination
+    private String getMimeType(String pluginUri, String path) throws IOException,
+            FileNotFoundException {
+        InputStream resource = dms.getPlugin(pluginUri).getResourceAsStream(path);
+        if (resource == null) {
+            throw new RuntimeException("resource " + path + " of plugin " + pluginUri
+                    + "not accessible");
+        }
+        // copy resource to a temporary file
+        File file = File.createTempFile("mail_image_resource", "bin");
+        FileOutputStream writer = new FileOutputStream(file);
+        IOUtils.copy(resource, writer);
+        IOUtils.closeQuietly(writer);
+        IOUtils.closeQuietly(resource);
+        // open connection and get MIME type
+        return file.toURI().toURL().openConnection().getContentType();
+    }
 }

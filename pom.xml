@@ -23,6 +23,11 @@
             <version>4.0.12-SNAPSHOT</version>
         </dependency>
         <dependency>
+            <groupId>de.deepamehta</groupId>
+            <artifactId>deepamehta-files</artifactId>
+            <version>4.0.12-SNAPSHOT</version>
+        </dependency>
+        <dependency>
             <groupId>javax.mail</groupId>
             <artifactId>mail</artifactId>
             <version>1.4.5</version>
@@ -37,6 +42,16 @@
             <artifactId>commons-email</artifactId>
             <version>1.2</version>
         </dependency>
+        <dependency>
+            <groupId>commons-io</groupId>
+            <artifactId>commons-io</artifactId>
+            <version>2.4</version>
+        </dependency>
+        <dependency>
+            <groupId>org.jsoup</groupId>
+            <artifactId>jsoup</artifactId>
+            <version>1.6.3</version>
+        </dependency>
     </dependencies>
 
     <build>
@@ -47,7 +62,7 @@
                 <configuration>
                     <instructions>
                         <!-- embed JAF to merge class loader of mail -->
-                        <Embed-Dependency>activation,mail,commons-email</Embed-Dependency>
+                        <Embed-Dependency>jsoup,activation,mail,commons-email</Embed-Dependency>
                         <!-- optional include - JAF searches in class loader space if not exist -->
                         <Import-Package>sun.security.util;resolution:=optional,*</Import-Package>
                         <Bundle-Activator>
