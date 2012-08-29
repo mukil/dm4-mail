@@ -28,6 +28,9 @@ dm4c.add_plugin('dm4.mail.plugin', function () {
 
   // configure menu and type commands
   dm4c.add_listener('topic_commands', function (topic) {
+    if (!dm4c.has_create_permission('dm4.mail')) {
+        return
+    }
     var commands = [];
     if (topic.type_uri === 'dm4.mail') {
       commands.push({
