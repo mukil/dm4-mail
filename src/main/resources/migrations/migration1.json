@@ -14,7 +14,7 @@
                 { # dummy field to hold the renderer, that directly creates recipient associations
                     type_uri: "dm4.webclient.view_config",
                     composite: {
-                        dm4.webclient.simple_renderer_uri: "dm4.mail.recipient_renderer"
+                        dm4.webclient.simple_renderer_uri: "dm4.mail.recipient.renderer"
                     }
                 }
             ]
@@ -27,7 +27,7 @@
                 { # dummy field to hold the renderer, that directly creates the sender association
                     type_uri: "dm4.webclient.view_config",
                     composite: {
-                        dm4.webclient.simple_renderer_uri: "dm4.mail.sender_renderer"
+                        dm4.webclient.simple_renderer_uri: "dm4.mail.sender.renderer"
                     }
                 }
             ]
@@ -36,15 +36,7 @@
             value: "Mail Subject",
             uri: "dm4.mail.subject",
             data_type_uri: "dm4.core.text",
-            index_mode_uris: ["dm4.core.fulltext"],
-            view_config_topics: [
-                {
-                    type_uri: "dm4.webclient.view_config",
-                    composite: {
-                        dm4.webclient.simple_renderer_uri: "dm4.webclient.title_renderer"
-                    }
-                }
-            ]
+            index_mode_uris: ["dm4.core.fulltext"]
         },
         {
             value: "Mail Body",
@@ -63,33 +55,41 @@
             data_type_uri: "dm4.core.composite",
             assoc_defs: [
                 {
-                    part_topic_type_uri:  "dm4.mail.subject",
-                    part_cardinality_uri: "dm4.core.one",
-                    assoc_type_uri:       "dm4.core.composition_def"
+                    part_topic_type_uri:   "dm4.mail.subject",
+                    part_cardinality_uri:  "dm4.core.one",
+                    assoc_type_uri:        "dm4.core.composition_def",
+                    view_config_topics: [
+                        {
+                            type_uri: "dm4.webclient.view_config",
+                            composite: {
+                                dm4.webclient.simple_renderer_uri: "dm4.webclient.title_renderer"
+                            }
+                        }
+                    ]
                 },
                 {
-                    part_topic_type_uri:  "dm4.mail.from",
-                    part_cardinality_uri: "dm4.core.one",
-                    assoc_type_uri:       "dm4.core.composition_def"
+                    part_topic_type_uri:   "dm4.mail.from",
+                    part_cardinality_uri:  "dm4.core.one",
+                    assoc_type_uri:        "dm4.core.composition_def"
                 },
                 {
-                    part_topic_type_uri:  "dm4.mail.recipient.list",
-                    part_cardinality_uri: "dm4.core.one",
-                    assoc_type_uri:       "dm4.core.composition_def"
+                    part_topic_type_uri:   "dm4.mail.recipient.list",
+                    part_cardinality_uri:  "dm4.core.one",
+                    assoc_type_uri:        "dm4.core.composition_def"
                 },
                 {
-                    part_topic_type_uri:  "dm4.mail.body",
-                    part_cardinality_uri: "dm4.core.one",
-                    assoc_type_uri:       "dm4.core.composition_def"
+                    part_topic_type_uri:   "dm4.mail.body",
+                    part_cardinality_uri:  "dm4.core.one",
+                    assoc_type_uri:        "dm4.core.composition_def"
                 },
                 {
-                    part_topic_type_uri:  "dm4.mail.date",
-                    part_cardinality_uri: "dm4.core.one",
-                    assoc_type_uri:       "dm4.core.composition_def"
+                    part_topic_type_uri:   "dm4.mail.date",
+                    part_cardinality_uri:  "dm4.core.one",
+                    assoc_type_uri:        "dm4.core.composition_def"
                 }
             ],
             label_config: [
-                dm4.mail.subject
+                "dm4.mail.subject"
             ],
             view_config_topics: [
                 {

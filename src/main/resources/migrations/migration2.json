@@ -28,7 +28,7 @@
                 { # dummy field to hold the renderer, that directly creates the sender association
                     type_uri: "dm4.webclient.view_config",
                     composite: {
-                        dm4.webclient.simple_renderer_uri: "dm4.mail.sender_renderer"
+                        dm4.webclient.simple_renderer_uri: "dm4.mail.sender.renderer"
                     }
                 }
             ]

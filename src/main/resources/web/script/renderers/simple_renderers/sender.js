@@ -29,7 +29,7 @@
     return $topic.empty().append($icon).append($link).append($email)
   }
 
-  dm4c.add_simple_renderer('dm4.mail.sender_renderer', {
+  dm4c.add_simple_renderer('dm4.mail.sender.renderer', {
 
     render_info: function (model, $parent) {
       var topic = model.toplevel_topic,

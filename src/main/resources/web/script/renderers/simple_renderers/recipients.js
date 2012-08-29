@@ -102,7 +102,7 @@
     })
   }
 
-  dm4c.add_simple_renderer('dm4.mail.recipient_renderer', {
+  dm4c.add_simple_renderer('dm4.mail.recipient.renderer', {
 
     render_info: function (model, $parent) {
       var mail = model.toplevel_topic,
