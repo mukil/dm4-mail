@@ -27,6 +27,7 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.WebApplicationException;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.mail.EmailAttachment;
 import org.apache.commons.mail.EmailException;
 import org.apache.commons.mail.HtmlEmail;
 import org.jsoup.Jsoup;
@@ -49,6 +50,7 @@ import de.deepamehta.core.service.listener.PluginServiceArrivedListener;
 import de.deepamehta.core.service.listener.PluginServiceGoneListener;
 import de.deepamehta.core.service.listener.PostCreateTopicListener;
 import de.deepamehta.core.util.DeepaMehtaUtils;
+import de.deepamehta.plugins.files.ResourceInfo;
 import de.deepamehta.plugins.files.service.FilesService;
 import de.deepamehta.plugins.mail.service.MailService;
 
@@ -314,6 +316,14 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
             embedImages(email, body);
             email.setHtmlMsg(body.html());
 
+            for (Long fileId : mail.getAttachmentIds()) {
+                String path = fileService.getFile(fileId).getAbsolutePath();
+                EmailAttachment attachment = new EmailAttachment();
+                attachment.setPath(path);
+                log.fine("attach " + path);
+                email.attach(attachment);
+            }
+
             Map<RecipientType, List<InternetAddress>> recipients = mail.getRecipients();
             for (RecipientType type : recipients.keySet()) {
                 switch (type) {
@@ -347,11 +357,36 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
         loadConfiguration();
     }
 
+    /**
+     * Reference file service and create the attachment directory if not exists.
+     */
     @Override
     public void pluginServiceArrived(PluginService service) {
         if (service instanceof FilesService) {
             log.fine("file service arrived");
             fileService = (FilesService) service;
+            // TODO move the initialization to migration "0"
+            try {
+                // check attachment file repository
+                ResourceInfo resourceInfo = fileService.getResourceInfo(ATTACHMENTS);
+                String kind = resourceInfo.toJSON().getString("kind");
+                if (kind.equals("directory") == false) {
+                    String repoPath = System.getProperty("dm4.filerepo.path");
+                    String message = "attachment storage directory " + repoPath + File.separator
+                            + ATTACHMENTS + " can not be used";
+                    throw new IllegalStateException(message);
+                }
+            } catch (WebApplicationException e) { // !exists
+                // catch fileService info request error => create directory
+                if (e.getResponse().getStatus() != 404) {
+                    throw e;
+                } else {
+                    log.info("create attachment directory");
+                    fileService.createFolder(ATTACHMENTS, "/");
+                }
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
         }
     }
 

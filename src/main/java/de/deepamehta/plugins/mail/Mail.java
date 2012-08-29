@@ -3,6 +3,8 @@ package de.deepamehta.plugins.mail;
 import static de.deepamehta.plugins.mail.MailPlugin.*;
 
 import java.io.UnsupportedEncodingException;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -10,6 +12,7 @@ import java.util.Map;
 import javax.mail.internet.InternetAddress;
 
 import de.deepamehta.core.DeepaMehtaTransaction;
+import de.deepamehta.core.RelatedTopic;
 import de.deepamehta.core.Topic;
 import de.deepamehta.core.model.CompositeValue;
 import de.deepamehta.core.model.SimpleValue;
@@ -25,14 +28,19 @@ public class Mail {
 
     public static final String DATE = "dm4.mail.date";
 
+    public static final String FILE = "dm4.files.file";
+
     public static final String SUBJECT = "dm4.mail.subject";
 
     private final DeepaMehtaService dms;
 
     private final Topic topic;
 
+    private final ClientState clientState;
+
     public Mail(long topicId, DeepaMehtaService dms, ClientState clientState) {
         this.dms = dms;
+        this.clientState = clientState;
         this.topic = dms.getTopic(topicId, true, clientState);
     }
 
@@ -77,4 +85,12 @@ public class Mail {
         return topic;
     }
 
+    public Collection<Long> getAttachmentIds() {
+        List<Long> attachments = new ArrayList<Long>();
+        for (RelatedTopic attachment : topic.getRelatedTopics(TopicUtils.AGGREGATION,
+                TopicUtils.WHOLE, TopicUtils.PART, FILE, false, false, 0, clientState)) {
+            attachments.add(attachment.getId());
+        }
+        return attachments;
+    }
 }
