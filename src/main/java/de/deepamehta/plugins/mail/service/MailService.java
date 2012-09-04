@@ -1,11 +1,44 @@
 package de.deepamehta.plugins.mail.service;
 
-import de.deepamehta.core.ResultSet;
+import java.util.Collection;
+
+import de.deepamehta.core.Association;
 import de.deepamehta.core.Topic;
 import de.deepamehta.core.service.PluginService;
+import de.deepamehta.plugins.mail.RecipientType;
 
 public interface MailService extends PluginService {
 
-    public ResultSet<Topic> getSearchParentTypes();
+    /**
+     * Returns parent of each search type.
+     * 
+     * Parent types must include at least one email address.
+     * 
+     * @return parent search types.
+     */
+    Collection<Topic> getSearchParentTypes();
 
+    /**
+     * Associate mail and recipient.
+     * 
+     * @param mailId
+     *            ID of a mail topic.
+     * @param recipient
+     *            Recipient topic with at least one email address.
+     * @param type
+     *            Recipient type URI or null to choose the configured default.
+     * @return Recipient association with email address and recipient type.
+     */
+    Association associateRecipient(long mailId, Topic recipient, RecipientType type);
+
+    /**
+     * Update mail sender association.
+     * 
+     * @param topicId
+     *            ID of a mail or configuration topic.
+     * @param senderId
+     *            Sender topic with at least one email address.
+     * @return Sender association with email address.
+     */
+    Association associateSender(long topicId, Topic sender);
 }

@@ -6,7 +6,7 @@ import java.util.Map;
 /**
  * Switchable recipient type enumeration mapping.
  */
-enum RecipientType {
+public enum RecipientType {
 
     BCC("dm4.mail.recipient.bcc"), CC("dm4.mail.recipient.cc"), TO("dm4.mail.recipient.to");
 

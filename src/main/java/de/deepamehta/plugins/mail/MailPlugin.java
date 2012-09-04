@@ -78,82 +78,74 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
     private FilesService fileService;
 
     /**
-     * Associate mail and recipient.
-     * 
-     * @param mailId
-     *            ID of a mail topic.
-     * @param recipientId
-     *            ID of a recipient topic with at least one email address.
-     * @param type
-     *            Recipient type URI or null to choose the configured default.
-     * @param clientState
-     * @return Recipient association with email address and recipient type.
+     * @see #associateRecipient(long, Topic, String)
      */
     @GET
     @Path("{mail}/recipient/{recipient}")
     public Association associateRecipient(@PathParam("mail") long mailId,
-            @PathParam("recipient") long recipientId, @QueryParam("type") String type,
-            @HeaderParam("Cookie") ClientState clientState) {
+            @PathParam("recipient") long recipientId, @QueryParam("type") String type) {
         try {
-            log.info("associate " + mailId + " with recipient " + recipientId);
+            RecipientType rType = null;
             if (type == null || type.isEmpty()// type URI is unknown?
                     || config.getRecipientTypeUris().contains(type) == false) {
                 log.fine("use default recipient type");
-                type = config.getDefaultRecipientType();
+                rType = config.getDefaultRecipientType();
+            } else {
+                rType = RecipientType.fromUri(type);
             }
-
-            log.info("reveal email address of recipient " + recipientId);
-            List<TopicModel> emailAddresses = dms.getTopic(recipientId, true, clientState)
-                    .getCompositeValue().getTopics(EMAIL_ADDRESS);
-            if (emailAddresses.size() < 1) {
-                throw new IllegalArgumentException("recipient must have at least one email");
-            }
-
-            // create and return association
-            AssociationModel association = new AssociationModel(RECIPIENT,//
-                    new TopicRoleModel(recipientId, PART),//
-                    new TopicRoleModel(mailId, WHOLE),//
-                    new CompositeValue()//
-                            .putRef(RECIPIENT_TYPE, type)// use the first email
-                            .putRef(EMAIL_ADDRESS, emailAddresses.get(0).getId()));
-            return dms.createAssociation(association, clientState);
+            return associateRecipient(mailId, dms.getTopic(recipientId, true, null), rType);
         } catch (Exception e) {
             throw new WebApplicationException(e);
         }
     }
 
+    @Override
+    public Association associateRecipient(long mailId, Topic recipient, RecipientType type) {
+        log.info("associate " + mailId + " with recipient " + recipient.getId());
+        List<TopicModel> addresses = recipient.getCompositeValue().getTopics(EMAIL_ADDRESS);
+        if (addresses.size() < 1) {
+            throw new IllegalArgumentException("recipient must have at least one email");
+        }
+
+        // create and return association
+        AssociationModel association = new AssociationModel(RECIPIENT,//
+                new TopicRoleModel(recipient.getId(), PART),//
+                new TopicRoleModel(mailId, WHOLE),//
+                new CompositeValue()//
+                        .putRef(RECIPIENT_TYPE, type.getUri())// use the first email
+                        .putRef(EMAIL_ADDRESS, addresses.get(0).getId()));
+        return dms.createAssociation(association, null);
+    }
+
     /**
-     * Update mail sender association.
-     * 
-     * @param topicId
-     *            ID of a mail or configuration topic.
-     * @param senderId
-     *            ID of a sender topic with at least one email address.
-     * @param clientState
-     * @return Sender association with email address.
+     * @see #associateSender(long, Topic)
      */
     @GET
     @Path("{topic}/sender/{sender}")
-    public Association associateSender(@PathParam("topic") long topicId,
-            @PathParam("sender") long senderId, @HeaderParam("Cookie") ClientState clientState) {
+    public Association associateSender(@PathParam("topic") long mailId,
+            @PathParam("sender") long senderId) {
         try {
-            log.info("reveal email address of sender " + senderId);
-            List<TopicModel> emailAddresses = dms.getTopic(senderId, true, clientState)
-                    .getCompositeValue().getTopics(EMAIL_ADDRESS);
-            if (emailAddresses.size() < 1) {
-                throw new IllegalArgumentException("sender must have at least one email");
-            }
-
-            log.info("associate " + topicId + " with sender " + senderId);
-            AssociationModel association = new AssociationModel(SENDER,//
-                    new TopicRoleModel(senderId, PART),//
-                    new TopicRoleModel(topicId, WHOLE),//
-                    new CompositeValue()//
-                            .putRef(EMAIL_ADDRESS, emailAddresses.get(0).getId()));
-            return dms.createAssociation(association, clientState);
+            return associateSender(mailId, dms.getTopic(senderId, true, null));
         } catch (Exception e) {
             throw new WebApplicationException(e);
         }
+    }
+
+    @Override
+    public Association associateSender(long mailId, Topic sender) {
+        log.info("associate " + mailId + " with sender " + sender.getId());
+
+        List<TopicModel> addresses = sender.getCompositeValue().getTopics(EMAIL_ADDRESS);
+        if (addresses.size() < 1) {
+            throw new IllegalArgumentException("sender must have at least one email");
+        }
+
+        AssociationModel association = new AssociationModel(SENDER,//
+                new TopicRoleModel(sender.getId(), PART),//
+                new TopicRoleModel(mailId, WHOLE),//
+                new CompositeValue()// use the first email
+                        .putRef(EMAIL_ADDRESS, addresses.get(0).getId()));
+        return dms.createAssociation(association, null);
     }
 
     /**
@@ -166,15 +158,14 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
      */
     @GET
     @Path("/autocomplete/{term}")
-    public ResultSet<TopicModel> autocomplete(@PathParam("term") String term,
-            @HeaderParam("Cookie") ClientState clientState) {
+    public ResultSet<TopicModel> autocomplete(@PathParam("term") String term) {
         try {
             log.info("autocomplete " + term);
             // hash parent results by ID to overwrite duplicates
             Map<Long, TopicModel> results = new HashMap<Long, TopicModel>();
             for (String uri : config.getSearchTypeUris()) {
                 String parentTypeUri = config.getParentOfSearchType(uri).getUri();
-                for (Topic topic : dms.searchTopics(term, uri, false, clientState)) {
+                for (Topic topic : dms.searchTopics(term, uri, false, null)) {
                     Topic parentTopic = TopicUtils.getParentTopic(topic, parentTypeUri);
                     results.put(parentTopic.getId(), parentTopic.getModel());
                 }
@@ -191,21 +182,19 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
      * 
      * @param recipientId
      *            ID of a recipient topic with at least one email address.
-     * @param clientState
      * @return Mail topic with associated recipient.
      */
     @GET
     @Path("/create/{recipient}")
-    public Topic create(@PathParam("recipient") long recipientId,
-            @HeaderParam("Cookie") ClientState clientState) {
+    public Topic create(@PathParam("recipient") long recipientId) {
         Topic mail = null;
         log.info("write a mail to recipient " + recipientId);
         try {
-            mail = dms.createTopic(new TopicModel(MAIL), clientState);
+            mail = dms.createTopic(new TopicModel(MAIL), null);
         } catch (Exception e) {
             throw new WebApplicationException(e);
         }
-        associateRecipient(mail.getId(), recipientId, null, clientState);
+        associateRecipient(mail.getId(), recipientId, null);
         return mail;
     }
 
@@ -216,7 +205,7 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
     @Path("/recipient/default")
     public String getDefaultRecipientType() {
         try {
-            return config.getDefaultRecipientType();
+            return config.getDefaultRecipientType().getUri();
         } catch (Exception e) {
             throw new WebApplicationException(e);
         }
@@ -236,21 +225,22 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
     }
 
     /**
-     * Returns parent of each search type.
-     * 
-     * Parent types must include at least one email address.
-     * 
-     * @return Parent search types.
+     * @see #getSearchParentTypes
      */
     @GET
     @Path("/search/parents")
-    public ResultSet<Topic> getSearchParentTypes() {
+    public ResultSet<Topic> listSearchParentTypes() {
         try {
-            Collection<Topic> parents = config.getSearchParentTypes();
+            Collection<Topic> parents = getSearchParentTypes();
             return new ResultSet<Topic>(parents.size(), new HashSet<Topic>(parents));
         } catch (Exception e) {
             throw new WebApplicationException(e);
         }
+    }
+
+    @Override
+    public Collection<Topic> getSearchParentTypes() {
+        return config.getSearchParentTypes();
     }
 
     /**
