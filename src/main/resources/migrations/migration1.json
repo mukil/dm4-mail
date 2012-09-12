@@ -47,7 +47,15 @@
         {
             value: "Mail Sent Date",
             uri: "dm4.mail.date",
-            data_type_uri: "dm4.core.text"
+            data_type_uri: "dm4.core.text",
+            view_config_topics: [
+                {
+                    type_uri: "dm4.webclient.view_config",
+                    composite: {
+                        dm4.webclient.editable: false
+                    }
+                }
+            ]
         },
         {
             value: "Mail",

@@ -5,11 +5,13 @@
   // --- REST getter ------------------------------------------------
 
   function getRecipientTopics(mailId) {
-    return dm4c.restc.get_related_topics(mailId, {
+    return dm4c.restc.get_topic_related_topics(mailId, {
       assoc_type_uri: 'dm4.mail.recipient',
       my_role_type_uri: 'dm4.core.whole',
       others_role_type_uri: 'dm4.core.part'
-    }).items
+    }).items.sort(function (a, b) {
+        return (a.value < b.value) ? -1 : (a.value > b.value) ? 1 : 0;
+      })
   }
 
   function getRecipientAssociation(mailId, recipientId) {
@@ -22,25 +24,19 @@
   }
 
   function associate(mailId, recipientId) {
-    return dm4c.restc.request('GET', '/mail/' + mailId + '/recipient/' + recipientId)
+    return dm4c.restc.request('POST', '/mail/' + mailId + '/recipient/' + recipientId)
   }
 
   // --- REST update ------------------------------------------------
 
   function updateRecipientType(association, typeUri) {
     association.composite['dm4.mail.recipient.type'] = 'ref_uri:' + typeUri
-    dm4c.restc.update_association(association)
+    // TODO use and test webclient update!
+    dm4c.do_update_association(association)
+    //dm4c.restc.update_association(association)
   }
 
   // --- callbacks ---------------------------------------------------
-
-  // associate recipient with selected mail and create an editor
-  function onCompletionSelect($parent, item, $types) {
-    var mailId = dm4c.selected_object.id
-    associate(mailId, item.id)
-    $parent.before(createRecipientEditor(mailId, item, $types))
-    // @todo show but not focus the created association
-  }
 
   // delete recipient association and remove parent editor
   function onRemoveButtonClick() {
@@ -60,7 +56,7 @@
   // --- jQuery factory methods --------------------------------------
 
   function createTypeSelector(types) {
-    // @todo use render helper menu (core method needs a callback parameter)
+    // TODO use render helper menu (core method needs a callback parameter)
     var $select = $('<select>').attr('size', 1)
     $.each(types, function (id, type) {
       $select.append($('<option>').val(type.uri).text(type.value))
@@ -72,21 +68,11 @@
     return $types.clone().val(association.composite['dm4.mail.recipient.type'].uri)
   }
 
-  function createAddButton($types, $recipients) {
-    function add() {
-      $recipients.append(dm4c.get_plugin('dm4.mail.plugin')
-        .createCompletionField(function ($item, item) {
-          onCompletionSelect($item, item, $types)
-        }))
-    }
-
-    return dm4c.ui.button(add, 'Add').css('display', 'inline-block')
-  }
-
   function createRecipientEditor(mailId, recipient, $types) {
     function click() {
       dm4c.do_reveal_related_topic(recipient.id)
     }
+
     var association = getRecipientAssociation(mailId, recipient.id),
       email = association.composite['dm4.contacts.email_address'].value,
       $email = $('<span>').text('<' + email + '>'),
@@ -114,23 +100,45 @@
 
     render_form: function (model, $parent) {
       var mail = model.toplevel_topic,
-        recipients = getRecipientTopics(mail.id),
         types = dm4c.hash_by_id(getRecipientTypes()),
+        recipients = getRecipientTopics(mail.id),
         $types = createTypeSelector(types),
         $recipients = $('<div>'),
-        $add = createAddButton($types, $recipients)
-
+        $add = dm4c.ui.button(add, 'Add').css('display', 'inline-block'),
+        $cancel = dm4c.ui.button(cancel, 'Cancel').css('display', 'inline-block'),
+        $search = dm4c.get_plugin('dm4.mail.plugin')
+          .createCompletionField(function onSelect($item, item) {
+            // associate recipient with selected mail and create an editor
+            associate(mail.id, item.id)
+            $item.before(createRecipientEditor(mail.id, item, $types))
+            // TODO show but not focus the created association
+            $cancel.click() // cancel after change to hide edit fields ;-)
+          })
       $.each(recipients, function (i, recipient) {
         var $recipient = createRecipientEditor(mail.id, recipient, $types)
         $recipients.append($recipient)
       })
+      $recipients.append($search.hide())
+
+      function add() {
+        $cancel.show()
+        $search.show().focus()
+        $add.hide()
+      }
+
+      function cancel() {
+        $cancel.hide()
+        $search.hide()
+        $add.show()
+      }
 
       // register select callback
       $recipients.on('change', 'select', onRecipientTypeSelect)
 
       // show time
       $parent.addClass('level1').append($recipients)
-      $parent.after($('<div>').addClass('add-button').append($add))
+      $parent.after($('<div>').addClass('add-button').append($add).append($cancel))
+      $cancel.hide() // hide after insert to prevent block style
 
       return function () {
         return true // set dummy field after edit

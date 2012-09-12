@@ -14,32 +14,57 @@ dm4c.add_plugin('dm4.mail.plugin', function () {
     dm4c.restc.request('GET', '/mail/config/load')
   }
 
+  function copyMail() {
+    var mail = dm4c.restc.request('POST', '/mail/' + dm4c.selected_object.id + '/copy')
+    dm4c.show_topic(new Topic(mail), 'edit', null, true)
+  }
+
+  function saveAndSendMail() {
+    dm4c.page_panel.save()
+    sendMail()
+  }
+
   function sendMail() {
-    var mail = dm4c.restc.request('GET', '/mail/send/' + dm4c.selected_object.id)
+    var mail = dm4c.restc.request('POST', '/mail/' + dm4c.selected_object.id + '/send')
     dm4c.show_topic(new Topic(mail), 'show', null, true)
   }
 
   // create a new mail with one recipient (the actual contact)
   function writeMail() {
-    var mail = dm4c.restc.request('GET', '/mail/create/' + dm4c.selected_object.id)
-    // @todo render recipient association
+    var mail = dm4c.restc.request('POST', '/mail/write/' + dm4c.selected_object.id)
+    // TODO render recipient association
+    dm4c.do_reveal_related_topic(mail.id)
     dm4c.show_topic(new Topic(mail), 'edit', null, true)
   }
 
   // configure menu and type commands
   dm4c.add_listener('topic_commands', function (topic) {
     if (!dm4c.has_create_permission('dm4.mail')) {
-        return
+      return
     }
     var commands = [];
     if (topic.type_uri === 'dm4.mail') {
-      commands.push({
-        label: 'Send',
-        handler: sendMail,
-        // @todo enable send command in edit mode (requires topic update and mode switch)
-        context: ['context-menu', 'detail-panel-show']
-      })
+      commands.push({is_separator: true, context: "context-menu"})
+      if (topic.composite['dm4.mail.date'] && topic.composite['dm4.mail.date'].value) {
+        commands.push({
+          label: 'Send Again',
+          handler: copyMail,
+          context: ['context-menu', 'detail-panel-show']
+        })
+      } else {
+        commands.push({
+          label: 'Send',
+          handler: sendMail,
+          context: ['context-menu', 'detail-panel-show']
+        })
+        commands.push({
+          label: 'Send',
+          handler: saveAndSendMail,
+          context: ['detail-panel-edit']
+        })
+      }
     } else if (topic.uri === 'dm4.mail.config') {
+      commands.push({is_separator: true, context: "context-menu"})
       commands.push({
         label: 'Reload',
         handler: reloadConfiguration,
@@ -48,6 +73,7 @@ dm4c.add_plugin('dm4.mail.plugin', function () {
     } else {
       $.each(getSearchableParentTypes(), function (r, type) {
         if (topic.type_uri === type.uri) {
+          commands.push({is_separator: true, context: "context-menu"})
           commands.push({
             label: 'Write Mail',
             handler: writeMail,
@@ -63,7 +89,7 @@ dm4c.add_plugin('dm4.mail.plugin', function () {
   function highlightTerm(label, term) {
     var h = label
     $.each(term.split(' '), function (w, word) {
-      h = h.replace(word, '<strong>' + word + '</strong>')
+      h = h.replace(new RegExp('(' + word + ')', 'gi'), '<strong>$1</strong>')
     })
     return h
   }

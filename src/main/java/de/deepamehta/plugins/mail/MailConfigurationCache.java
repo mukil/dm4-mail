@@ -57,6 +57,24 @@ public class MailConfigurationCache {
         this.dms = dms;
     }
 
+    /**
+     * Returns the corresponding enumeration value or the configured default
+     * recipient type.
+     * 
+     * @param type
+     *            Valid recipient type enumeration value.
+     * @return Recipient type.
+     */
+    public RecipientType checkRecipientType(String type) {
+        if (type == null || type.isEmpty()// type URI is unknown?
+                || getRecipientTypeUris().contains(type) == false) {
+            log.fine("use default recipient type");
+            return getDefaultRecipientType();
+        } else {
+            return RecipientType.fromUri(type);
+        }
+    }
+
     private Topic getConfiguration() {
         if (config == null) {
             log.info("reveal mail plugin configuration");
