@@ -98,9 +98,25 @@ dm4c.add_plugin('dm4.mail.plugin', function () {
    * Expose a auto-completion field creator.
    * onSelect gets $(this) and the attached item.
    */
-  this.createCompletionField = function (onSelect) {
-    var $elem = $('<input>'),
-      lastTerm = '' // save last request term
+  this.createCompletionField = function (label, onSelect) {
+    var $elem = $('<input>').hide(),
+      lastTerm = '', // save last request term
+      $add = dm4c.ui.button(add, label).css('display', 'inline-block'),
+      $cancel = dm4c.ui.button(cancel, 'Cancel').css('display', 'inline-block'),
+      $div = $('<div>').addClass('add-button').append($elem).append($add).append($cancel)
+
+    function add() {
+      $cancel.show()
+      $elem.show().focus()
+      $add.hide()
+    }
+
+    function cancel() {
+      $cancel.hide()
+      $elem.hide()
+      $add.show()
+    }
+
     $elem.autocomplete({
       minLength: 1,
       source: function (request, response) {
@@ -114,6 +130,7 @@ dm4c.add_plugin('dm4.mail.plugin', function () {
       select: function (event, ui) {
         onSelect($(this), ui.item)
         $(this).val('')
+        cancel() // cancel after change to hide edit fields ;-)
         return false
       }
     })
@@ -124,7 +141,8 @@ dm4c.add_plugin('dm4.mail.plugin', function () {
         $a = $('<a>').append($img).append($label)
       $('<li>').data('item.autocomplete', item).append($a).appendTo(ul)
     }
-    return $elem
+    $cancel.hide() // hide after insert to prevent block style
+    return $div
   }
 
 })

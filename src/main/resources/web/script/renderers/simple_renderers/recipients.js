@@ -82,7 +82,7 @@
       $rTypes = cloneAndSelectType($types, association),
       $recipient = $('<div>').append($rTypes).append($icon).append($link).append($email)
     $recipient.append($('<div>').addClass('remove-button').append($remove))
-    return $recipient.addClass('box level2').data('recipient', {
+    return $recipient.addClass('box level1').data('recipient', {
       association: association,
       topic: recipient
     })
@@ -103,42 +103,22 @@
         types = dm4c.hash_by_id(getRecipientTypes()),
         recipients = getRecipientTopics(mail.id),
         $types = createTypeSelector(types),
-        $recipients = $('<div>'),
-        $add = dm4c.ui.button(add, 'Add').css('display', 'inline-block'),
-        $cancel = dm4c.ui.button(cancel, 'Cancel').css('display', 'inline-block'),
-        $search = dm4c.get_plugin('dm4.mail.plugin')
-          .createCompletionField(function onSelect($item, item) {
-            // associate recipient with selected mail and create an editor
-            associate(mail.id, item.id)
-            $item.before(createRecipientEditor(mail.id, item, $types))
-            // TODO show but not focus the created association
-            $cancel.click() // cancel after change to hide edit fields ;-)
-          })
+        $recipients = $('<div>')
       $.each(recipients, function (i, recipient) {
-        var $recipient = createRecipientEditor(mail.id, recipient, $types)
-        $recipients.append($recipient)
+        $recipients.append(createRecipientEditor(mail.id, recipient, $types))
       })
-      $recipients.append($search.hide())
-
-      function add() {
-        $cancel.show()
-        $search.show().focus()
-        $add.hide()
-      }
-
-      function cancel() {
-        $cancel.hide()
-        $search.hide()
-        $add.show()
-      }
 
       // register select callback
       $recipients.on('change', 'select', onRecipientTypeSelect)
 
       // show time
-      $parent.addClass('level1').append($recipients)
-      $parent.after($('<div>').addClass('add-button').append($add).append($cancel))
-      $cancel.hide() // hide after insert to prevent block style
+      $parent.append($recipients).append(dm4c.get_plugin('dm4.mail.plugin')
+        .createCompletionField('Add', function ($item, item) {
+          // associate recipient with selected mail and create an editor
+          associate(mail.id, item.id)
+          $recipients.append(createRecipientEditor(mail.id, item, $types))
+          // TODO show but not focus the created association
+        }))
 
       return function () {
         return true // set dummy field after edit

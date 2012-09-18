@@ -42,44 +42,19 @@
 
     render_form: function (model, $parent) {
       var topic = model.toplevel_topic,
-        senderAssociation = { id: -1 },
-        $change = dm4c.ui.button(change, 'Change').css('display', 'inline-block'),
-        $cancel = dm4c.ui.button(cancel, 'Cancel').css('display', 'inline-block'),
         $topic = $('<div>'),
-        $sender = $('<div>').append($topic),
-        $search = dm4c.get_plugin('dm4.mail.plugin')
-          .createCompletionField(function ($item, item) {
-            // delete old sender and associate the chosen one
-            if (senderAssociation.id !== -1) {
-              dm4c.do_delete_association(senderAssociation)
-            }
-            senderAssociation = changeSender(topic.id, item.id)
-            updateSenderView($topic, item, senderAssociation)
-            // TODO show but not focus the created association
-            $cancel.click() // cancel after change to hide edit fields ;-)
-          })
-
-      function change() {
-        $cancel.show()
-        $search.show().focus()
-        $change.hide()
-      }
-
-      function cancel() {
-        $cancel.hide()
-        $search.hide()
-        $change.show()
-      }
+        $sender = $('<div>').append($topic)
 
       $.each(getSenderTopics(topic.id), function (s, sender) { // only one sender is supported
-        senderAssociation = getSenderAssociation(topic.id, sender.id)
-        updateSenderView($topic, sender, senderAssociation)
+        updateSenderView($topic, sender, getSenderAssociation(topic.id, sender.id))
       })
 
       // show time
-      $parent.addClass('level1').append($sender.append($search.hide()))
-      $parent.after($('<div>').addClass('add-button').append($change).append($cancel))
-      $cancel.hide() // hide after insert to prevent block style
+      $parent.append($sender).append(dm4c.get_plugin('dm4.mail.plugin')
+        .createCompletionField('Change', function ($item, item) {
+          updateSenderView($topic, item, changeSender(topic.id, item.id))
+          // TODO show but not focus the created association
+        }))
 
       return function () {
         return true // set dummy field after edit
