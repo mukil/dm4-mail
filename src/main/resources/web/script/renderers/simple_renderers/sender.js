@@ -23,11 +23,16 @@
       dm4c.do_reveal_related_topic(sender.id)
     }
 
-    var email = association.composite['dm4.contacts.email_address'].value,
-      $email = $('<span>').text('<' + email + '>'),
+    var email = association.composite['dm4.contacts.email_address'],
       $icon = dm4c.render.icon_link(sender, click),
       $link = dm4c.render.topic_link(sender, click)
-    return $topic.empty().append($icon).append($link).append($email)
+    $topic.empty().append($icon).append($link)
+    if (email) {
+      $topic.append($('<span>').text('<' + email.value + '>'))
+    } else {
+      $topic.append($('<span>').text('<NOT FOUND>')).addClass('invalidContact')
+    }
+    return $topic
   }
 
   dm4c.add_simple_renderer('dm4.mail.sender.renderer', {
@@ -42,17 +47,16 @@
 
     render_form: function (model, $parent) {
       var topic = model.toplevel_topic,
-        $topic = $('<div>'),
-        $sender = $('<div>').append($topic)
+        $sender = $('<div>')
 
       $.each(getSenderTopics(topic.id), function (s, sender) { // only one sender is supported
-        updateSenderView($topic, sender, getSenderAssociation(topic.id, sender.id))
+        updateSenderView($sender, sender, getSenderAssociation(topic.id, sender.id))
       })
 
       // show time
       $parent.append($sender).append(dm4c.get_plugin('dm4.mail.plugin')
         .createCompletionField('Change', function ($item, item) {
-          updateSenderView($topic, item, changeSender(topic.id, item.id))
+          updateSenderView($sender, item, changeSender(topic.id, item.id))
           // TODO show but not focus the created association
         }))
 

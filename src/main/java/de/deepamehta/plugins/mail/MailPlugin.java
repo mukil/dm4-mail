@@ -5,6 +5,7 @@ import static de.deepamehta.plugins.mail.TopicUtils.*;
 import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
@@ -30,6 +31,7 @@ import org.apache.commons.mail.HtmlEmail;
 import org.jsoup.nodes.Document;
 
 import de.deepamehta.core.Association;
+import de.deepamehta.core.RelatedTopic;
 import de.deepamehta.core.ResultSet;
 import de.deepamehta.core.Topic;
 import de.deepamehta.core.model.AssociationModel;
@@ -41,9 +43,9 @@ import de.deepamehta.core.service.ClientState;
 import de.deepamehta.core.service.DeepaMehtaService;
 import de.deepamehta.core.service.Directives;
 import de.deepamehta.core.service.PluginService;
-import de.deepamehta.core.service.listener.PluginServiceArrivedListener;
-import de.deepamehta.core.service.listener.PluginServiceGoneListener;
-import de.deepamehta.core.service.listener.PostCreateTopicListener;
+import de.deepamehta.core.service.event.PluginServiceArrivedListener;
+import de.deepamehta.core.service.event.PluginServiceGoneListener;
+import de.deepamehta.core.service.event.PostCreateTopicListener;
 import de.deepamehta.plugins.files.ResourceInfo;
 import de.deepamehta.plugins.files.service.FilesService;
 import de.deepamehta.plugins.mail.service.MailService;
@@ -110,18 +112,28 @@ public class MailPlugin extends PluginActivator implements //
             ClientState clientState) {
         log.info("associate " + mailId + " with recipient " + recipient.getId());
 
+        // get and check email addresses
         List<TopicModel> addresses = recipient.getCompositeValue().getTopics(EMAIL_ADDRESS);
         if (addresses.size() < 1) {
             throw new IllegalArgumentException("recipient must have at least one email");
         }
+        List<TopicModel> addressIds = new ArrayList<TopicModel>();
+        for (TopicModel address : addresses) {
+            addressIds.add(new TopicModel(address.getId()));
+        }
+        CompositeValue value = new CompositeValue()//
+                .putRef(RECIPIENT_TYPE, type.getUri())//
+                .put(EMAIL_ADDRESS, addressIds);
 
-        AssociationModel association = new AssociationModel(RECIPIENT,//
-                new TopicRoleModel(recipient.getId(), PART),//
-                new TopicRoleModel(mailId, WHOLE),//
-                new CompositeValue()//
-                        .putRef(RECIPIENT_TYPE, type.getUri())// use first email
-                        .putRef(EMAIL_ADDRESS, addresses.get(0).getId()));
-        return dms.createAssociation(association, clientState);
+        // find existing recipient association
+        Association association = dms.getAssociation(RECIPIENT, //
+                mailId, recipient.getId(), WHOLE, PART, false, clientState);
+        if (association == null) { // create a recipient association
+            return createRecipient(mailId, recipient, value, clientState);
+        } else { // update address and type references
+            association.setCompositeValue(value, clientState, new Directives());
+            return association;
+        }
     }
 
     /**
@@ -144,17 +156,29 @@ public class MailPlugin extends PluginActivator implements //
     public Association associateSender(long mailId, Topic sender, ClientState clientState) {
         log.info("associate " + mailId + " with sender " + sender.getId());
 
+        // get and check email address
         List<TopicModel> addresses = sender.getCompositeValue().getTopics(EMAIL_ADDRESS);
-        if (addresses.size() < 1) {
-            throw new IllegalArgumentException("sender must have at least one email");
+        if (addresses.size() != 1) {
+            throw new IllegalArgumentException("sender must have exactly one email address");
         }
+        CompositeValue value = new CompositeValue().putRef(EMAIL_ADDRESS, addresses.get(0).getId());
 
-        AssociationModel association = new AssociationModel(SENDER,//
-                new TopicRoleModel(sender.getId(), PART),//
-                new TopicRoleModel(mailId, WHOLE),//
-                new CompositeValue()// use the first email
-                        .putRef(EMAIL_ADDRESS, addresses.get(0).getId()));
-        return dms.createAssociation(association, clientState);
+        // find existing sender association
+        RelatedTopic oldSender = dms.getTopic(mailId, false, clientState)//
+                .getRelatedTopic(SENDER, WHOLE, PART, null, false, false, clientState);
+        if (oldSender == null) { // create the first sender association
+            return createSender(mailId, sender, value, clientState);
+        } else { // update or delete the old sender
+            Association association = dms.getAssociation(SENDER,//
+                    mailId, oldSender.getId(), WHOLE, PART, false, clientState);
+            if (sender.getId() != oldSender.getId()) { // delete the old one
+                dms.deleteAssociation(association.getId(), clientState);
+                association = createSender(mailId, sender, value, clientState);
+            } else { // update composite
+                association.setCompositeValue(value, clientState, new Directives());
+            }
+            return association;
+        }
     }
 
     /**
@@ -357,7 +381,11 @@ public class MailPlugin extends PluginActivator implements //
         email.setSubject(mail.getSubject());
 
         Document body = cidEmbedment.embedImages(email, mail.getBody());
-        email.setTextMsg(body.text());
+        String text = body.text();
+        if (text.isEmpty()) {
+            throw new IllegalArgumentException("empty message");
+        }
+        email.setTextMsg(text);
         email.setHtmlMsg(body.html());
 
         for (Long fileId : mail.getAttachmentIds()) {
@@ -417,6 +445,20 @@ public class MailPlugin extends PluginActivator implements //
             fileService = null;
             cidEmbedment = null;
         }
+    }
+
+    private Association createRecipient(long mailId, Topic recipient, CompositeValue value,
+            ClientState clientState) {
+        return dms.createAssociation(new AssociationModel(RECIPIENT,//
+                new TopicRoleModel(recipient.getId(), PART),//
+                new TopicRoleModel(mailId, WHOLE), value), clientState);
+    }
+
+    private Association createSender(long mailId, Topic sender, CompositeValue value,
+            ClientState clientState) {
+        return dms.createAssociation(new AssociationModel(SENDER,//
+                new TopicRoleModel(sender.getId(), PART),//
+                new TopicRoleModel(mailId, WHOLE), value), clientState);
     }
 
     private void postInstallMigration() {

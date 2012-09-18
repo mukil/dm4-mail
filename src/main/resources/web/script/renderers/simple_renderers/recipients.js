@@ -27,15 +27,6 @@
     return dm4c.restc.request('POST', '/mail/' + mailId + '/recipient/' + recipientId)
   }
 
-  // --- REST update ------------------------------------------------
-
-  function updateRecipientType(association, typeUri) {
-    association.composite['dm4.mail.recipient.type'] = 'ref_uri:' + typeUri
-    // TODO use and test webclient update!
-    dm4c.do_update_association(association)
-    //dm4c.restc.update_association(association)
-  }
-
   // --- callbacks ---------------------------------------------------
 
   // delete recipient association and remove parent editor
@@ -49,7 +40,8 @@
   function onRecipientTypeSelect() {
     var association = $(this).parent().data('recipient').association
     $('option:selected', $(this)).each(function () {
-      updateRecipientType(association, $(this).val())
+      association.composite['dm4.mail.recipient.type'] = 'ref_uri:' + $(this).val()
+      dm4c.do_update_association(association)
     })
   }
 
@@ -74,13 +66,15 @@
     }
 
     var association = getRecipientAssociation(mailId, recipient.id),
-      email = association.composite['dm4.contacts.email_address'].value,
-      $email = $('<span>').text('<' + email + '>'),
       $remove = dm4c.ui.button(onRemoveButtonClick, undefined, 'circle-minus'),
       $icon = dm4c.render.icon_link(recipient, click),
       $link = dm4c.render.topic_link(recipient, click),
       $rTypes = cloneAndSelectType($types, association),
-      $recipient = $('<div>').append($rTypes).append($icon).append($link).append($email)
+      $recipient = $('<div>').append($rTypes).append($icon).append($link)
+
+    $.each(association.composite['dm4.contacts.email_address'], function (e, email) {
+      $recipient.append($('<span>').text('<' + email.value + '> '))
+    })
     $recipient.append($('<div>').addClass('remove-button').append($remove))
     return $recipient.addClass('box level1').data('recipient', {
       association: association,

@@ -153,7 +153,7 @@
                 },
                 { # actual selected email address (direct recipient child)
                     part_topic_type_uri:   "dm4.contacts.email_address",
-                    part_cardinality_uri:  "dm4.core.one",
+                    part_cardinality_uri:  "dm4.core.many",
                     whole_cardinality_uri: "dm4.core.one",
                     assoc_type_uri:        "dm4.core.aggregation_def"
                 }

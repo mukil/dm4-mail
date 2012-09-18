@@ -16,6 +16,7 @@ import de.deepamehta.core.RelatedTopic;
 import de.deepamehta.core.Topic;
 import de.deepamehta.core.model.CompositeValue;
 import de.deepamehta.core.model.SimpleValue;
+import de.deepamehta.core.model.TopicModel;
 import de.deepamehta.core.service.ClientState;
 import de.deepamehta.core.service.DeepaMehtaService;
 
@@ -46,15 +47,19 @@ public class Mail {
         for (TopicAssociation recipient : TopicUtils.getRelatedParts(dms, topic, RECIPIENT)) {
             String personal = recipient.getTopic().getSimpleValue().toString();
             CompositeValue assocComposite = recipient.getAssociation().getCompositeValue();
-            String address = assocComposite.getTopic(EMAIL_ADDRESS).getSimpleValue().toString();
             String typeUri = assocComposite.getTopic(RECIPIENT_TYPE).getUri();
-            results.add(typeUri, address, personal);
+            for (TopicModel email : assocComposite.getTopics(EMAIL_ADDRESS)) {
+                results.add(typeUri, email.getSimpleValue().toString(), personal);
+            }
         }
         return results;
     }
 
     public InternetAddress getSender() throws UnsupportedEncodingException {
         TopicAssociation sender = TopicUtils.getRelatedPart(dms, topic, SENDER);
+        if (sender == null) {
+            throw new IllegalArgumentException("sender address required");
+        }
         String personal = sender.getTopic().getSimpleValue().toString();
         String address = sender.getAssociation().getCompositeValue()//
                 .getTopic(EMAIL_ADDRESS).getSimpleValue().toString();
