@@ -39,18 +39,16 @@
    * that reveals the file on click
    *
    * @param {Topic} file composite topic
-   * @param {TopicIdCache} attachments
    * @return {jQuery}
    */
-  function createAttachmentLink(file, attachments) {
+  function createAttachmentLink(file) {
     function click() {
       dm4c.do_reveal_related_topic(file.id)
     }
 
     var $icon = dm4c.render.icon_link(file, click),
-      $link = dm4c.render.topic_link(file, click),
-      $attachment = $('<div>').addClass('box level2').append($icon).append($link)
-    return $attachment
+      $link = dm4c.render.topic_link(file, click)
+    return $('<div>').addClass('box').append($icon).append($link)
   }
 
   /**
@@ -85,7 +83,7 @@
       dm4c.get_plugin('de.deepamehta.files').open_upload_dialog('attachments', function (file) {
         var attachment = dm4c.restc.get_topic_by_id(file.topic_id),
           $attachment = createAttachmentLink(attachment, attachments)
-        $attachment.append(createRemoveButton(attachment, attachments))
+        $attachment.addClass('level1').append(createRemoveButton(attachment, attachments))
         $attachments.append($attachment)
         attachments.push(attachment)
       })
@@ -108,7 +106,7 @@
     render_form: function (pages, $parent, level) {
 
       var attachments = new TopicIdCache({}),
-        $attachments = $('<div>').addClass('box level1'),
+        $attachments = $('<div>').addClass('box'),
         $add = createAddButton(attachments, $attachments),
         topic_renderer = dm4c.get_page_renderer("dm4.webclient.topic_renderer")
 
@@ -116,7 +114,7 @@
         if (page.topic.id !== -1) {
           var attachment = page.topic,
             $attachment = createAttachmentLink(attachment, attachments)
-          $attachment.append(createRemoveButton(attachment, attachments))
+          $attachment.addClass('level1').append(createRemoveButton(attachment, attachments))
           attachments.push(attachment)
           $attachments.append($attachment)
         }
