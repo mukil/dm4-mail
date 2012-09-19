@@ -36,6 +36,7 @@ import de.deepamehta.core.ResultSet;
 import de.deepamehta.core.Topic;
 import de.deepamehta.core.model.AssociationModel;
 import de.deepamehta.core.model.CompositeValue;
+import de.deepamehta.core.model.SimpleValue;
 import de.deepamehta.core.model.TopicModel;
 import de.deepamehta.core.model.TopicRoleModel;
 import de.deepamehta.core.osgi.PluginActivator;
@@ -46,6 +47,10 @@ import de.deepamehta.core.service.PluginService;
 import de.deepamehta.core.service.event.PluginServiceArrivedListener;
 import de.deepamehta.core.service.event.PluginServiceGoneListener;
 import de.deepamehta.core.service.event.PostCreateTopicListener;
+import de.deepamehta.plugins.accesscontrol.model.Operation;
+import de.deepamehta.plugins.accesscontrol.model.Permissions;
+import de.deepamehta.plugins.accesscontrol.model.UserRole;
+import de.deepamehta.plugins.accesscontrol.service.AccessControlService;
 import de.deepamehta.plugins.files.ResourceInfo;
 import de.deepamehta.plugins.files.service.FilesService;
 import de.deepamehta.plugins.mail.service.MailService;
@@ -434,8 +439,10 @@ public class MailPlugin extends PluginActivator implements //
         if (service instanceof FilesService) {
             log.fine("file service arrived");
             fileService = (FilesService) service;
-            postInstallMigration();
+            createAttachmentDirectory();
             cidEmbedment = new ImageCidEmbedment(dms, fileService);
+        } else if (service instanceof AccessControlService) {
+            checkACLsOfMigration((AccessControlService) service);
         }
     }
 
@@ -461,10 +468,9 @@ public class MailPlugin extends PluginActivator implements //
                 new TopicRoleModel(mailId, WHOLE), value), clientState);
     }
 
-    private void postInstallMigration() {
+    private void createAttachmentDirectory() {
         // TODO move the initialization to migration "0"
         try {
-            // check attachment file repository
             ResourceInfo resourceInfo = fileService.getResourceInfo(ATTACHMENTS);
             String kind = resourceInfo.toJSON().getString("kind");
             if (kind.equals("directory") == false) {
@@ -483,6 +489,18 @@ public class MailPlugin extends PluginActivator implements //
             }
         } catch (Exception e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    private void checkACLsOfMigration(AccessControlService acs) {
+        Topic config = dms.getTopic("uri", new SimpleValue("dm4.mail.config"), false, null);
+        if (acs.getCreator(config) == null) {
+            log.info("initial ACL update of configuration");
+            Topic admin = acs.getUsername("admin");
+            acs.setCreator(config, admin.getId());
+            acs.setOwner(config, admin.getId());
+            acs.createACLEntry(config, UserRole.OWNER,//
+                    new Permissions().add(Operation.WRITE, true));
         }
     }
 }
