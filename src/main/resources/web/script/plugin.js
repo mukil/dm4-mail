@@ -42,9 +42,9 @@ dm4c.add_plugin('dm4.mail.plugin', function () {
     if (!dm4c.has_create_permission('dm4.mail')) {
       return
     }
-    var commands = [];
+    var commands = []
     if (topic.type_uri === 'dm4.mail') {
-      commands.push({is_separator: true, context: "context-menu"})
+      commands.push({is_separator: true, context: 'context-menu'})
       if (topic.composite['dm4.mail.date'] && topic.composite['dm4.mail.date'].value) {
         commands.push({
           label: 'Send Again',
@@ -64,7 +64,7 @@ dm4c.add_plugin('dm4.mail.plugin', function () {
         })
       }
     } else if (topic.uri === 'dm4.mail.config') {
-      commands.push({is_separator: true, context: "context-menu"})
+      commands.push({is_separator: true, context: 'context-menu'})
       commands.push({
         label: 'Reload',
         handler: reloadConfiguration,
@@ -73,7 +73,7 @@ dm4c.add_plugin('dm4.mail.plugin', function () {
     } else {
       $.each(getSearchableParentTypes(), function (r, type) {
         if (topic.type_uri === type.uri) {
-          commands.push({is_separator: true, context: "context-menu"})
+          commands.push({is_separator: true, context: 'context-menu'})
           commands.push({
             label: 'Write Mail',
             handler: writeMail,
@@ -125,7 +125,7 @@ dm4c.add_plugin('dm4.mail.plugin', function () {
       },
       focus: function () {
         // prevent value inserted on focus
-        return false;
+        return false
       },
       select: function (event, ui) {
         onSelect($(this), ui.item)

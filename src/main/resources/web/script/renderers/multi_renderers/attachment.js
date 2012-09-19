@@ -108,7 +108,7 @@
       var attachments = new TopicIdCache({}),
         $attachments = $('<div>').addClass('box'),
         $add = createAddButton(attachments, $attachments),
-        topic_renderer = dm4c.get_page_renderer("dm4.webclient.topic_renderer")
+        topic_renderer = dm4c.get_page_renderer('dm4.webclient.topic_renderer')
 
       $.each(pages, function (p, page) {
         if (page.topic.id !== -1) {

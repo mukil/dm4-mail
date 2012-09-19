@@ -10,7 +10,7 @@
       my_role_type_uri: 'dm4.core.whole',
       others_role_type_uri: 'dm4.core.part'
     }).items.sort(function (a, b) {
-        return (a.value < b.value) ? -1 : (a.value > b.value) ? 1 : 0;
+        return (a.value < b.value) ? -1 : (a.value > b.value) ? 1 : 0
       })
   }
 
