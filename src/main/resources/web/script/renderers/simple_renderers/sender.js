@@ -28,7 +28,7 @@
       $link = dm4c.render.topic_link(sender, click)
     $topic.empty().append($icon).append($link)
     if (email) {
-      $topic.append($('<span>').text('<' + email.value + '>'))
+      $topic.append($('<span>').text('<' + email.value + '>')).removeClass('invalidContact')
     } else {
       $topic.append($('<span>').text('<NOT FOUND>')).addClass('invalidContact')
     }

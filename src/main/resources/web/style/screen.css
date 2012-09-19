@@ -1,3 +1,12 @@
+.completion {
+    padding-top: 2px;
+}
+
+.completion input {
+    float: left;
+    width: 60%;
+}
+
 .invalidContact {
     background-color: #F2DEDE;
     color: #B94A48;

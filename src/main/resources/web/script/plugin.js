@@ -142,7 +142,7 @@ dm4c.add_plugin('dm4.mail.plugin', function () {
       $('<li>').data('item.autocomplete', item).append($a).appendTo(ul)
     }
     $cancel.hide() // hide after insert to prevent block style
-    return $div
+    return $div.addClass('completion')
   }
 
 })
