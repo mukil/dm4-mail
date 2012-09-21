@@ -73,6 +73,8 @@ public class MailPlugin extends PluginActivator implements //
 
     public static final String FILE = "dm4.files.file";
 
+    public static final String FROM = "dm4.mail.from";
+
     public static final String MAIL = "dm4.mail";
 
     public static final String RECIPIENT = "dm4.mail.recipient";
@@ -349,16 +351,17 @@ public class MailPlugin extends PluginActivator implements //
     @Override
     public void postCreateTopic(Topic topic, ClientState clientState, Directives directives) {
         if (topic.getTypeUri().equals(MAIL)) {
-            log.info("set default mail sender of mail " + topic.getTypeUri());
-            TopicAssociation sender = config.getDefaultSender();
-            if (sender != null) {
-                TopicModel emailAddress = sender.getAssociation()//
-                        .getCompositeValue().getTopic(EMAIL_ADDRESS);
-                AssociationModel association = new AssociationModel(SENDER,//
-                        new TopicRoleModel(sender.getTopic().getId(), PART),//
-                        new TopicRoleModel(topic.getId(), WHOLE),//
-                        new CompositeValue().putRef(EMAIL_ADDRESS, emailAddress.getId()));
-                dms.createAssociation(association, clientState);
+            try {
+                TopicModel from = topic.getCompositeValue().getTopic(FROM);
+                if (from.getSimpleValue().booleanValue() == false) {
+                    associateDefaultSender(topic, clientState);
+                }
+            } catch (RuntimeException e) { // TODO use specific exception
+                if (e.getMessage().contains("Invalid access to CompositeValue entry")) {
+                    associateDefaultSender(topic, clientState);
+                } else {
+                    throw e;
+                }
             }
         }
     }
@@ -466,6 +469,15 @@ public class MailPlugin extends PluginActivator implements //
         return dms.createAssociation(new AssociationModel(SENDER,//
                 new TopicRoleModel(sender.getId(), PART),//
                 new TopicRoleModel(mailId, WHOLE), value), clientState);
+    }
+
+    private void associateDefaultSender(Topic mail, ClientState clientState) {
+        TopicAssociation sender = config.getDefaultSender();
+        if (sender != null) {
+            log.fine("set default sender of mail " + mail.getId());
+            createSender(mail.getId(), sender.getTopic(),//
+                    sender.getAssociation().getCompositeValue(), clientState);
+        }
     }
 
     private void createAttachmentDirectory() {

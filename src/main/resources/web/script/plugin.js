@@ -1,7 +1,5 @@
 dm4c.add_plugin('dm4.mail.plugin', function () {
 
-  // --- REST ------------------------------------------------
-
   function autoComplete(term) {
     return dm4c.restc.request('GET', '/mail/autocomplete/' + term).items
   }
@@ -134,6 +132,7 @@ dm4c.add_plugin('dm4.mail.plugin', function () {
         return false
       }
     })
+
     // render items with highlighted label and type specific icon
     $elem.data('autocomplete')._renderItem = function (ul, item) {
       var $img = dm4c.render.type_icon(item.type_uri).addClass('menu-icon'),
