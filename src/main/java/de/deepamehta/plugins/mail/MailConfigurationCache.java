@@ -35,7 +35,7 @@ public class MailConfigurationCache {
 
     private RecipientType defaultRecipientType = null;
 
-    private TopicAssociation defaultSender = null;
+    private RelatedTopic defaultSender = null;
 
     private boolean defaultSenderIsNull = false;
 
@@ -92,10 +92,11 @@ public class MailConfigurationCache {
         return defaultRecipientType;
     }
 
-    public TopicAssociation getDefaultSender() {
+    public RelatedTopic getDefaultSender() {
         if (defaultSenderIsNull == false && defaultSender == null) {
             log.info("reveal default sender");
-            defaultSender = TopicUtils.getRelatedPart(dms, getConfiguration(), SENDER);
+            defaultSender = getConfiguration().getRelatedTopic(SENDER,//
+                    WHOLE, PART, null, false, true, null);
             if (defaultSender == null) {
                 defaultSenderIsNull = true;
             }

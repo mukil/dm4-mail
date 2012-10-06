@@ -1,13 +1,6 @@
 package de.deepamehta.plugins.mail;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import de.deepamehta.core.Association;
-import de.deepamehta.core.RelatedTopic;
-import de.deepamehta.core.ResultSet;
 import de.deepamehta.core.Topic;
-import de.deepamehta.core.service.DeepaMehtaService;
 
 /**
  * Static topic access abstractions.
@@ -38,33 +31,4 @@ class TopicUtils {
                 PART_TYPE, WHOLE_TYPE, TOPIC_TYPE, false, false, null);
     }
 
-    // FIXME simplify query of association
-    public static TopicAssociation getRelatedPart(DeepaMehtaService dms,
-            String associationUri, Topic wholeTopic, Topic partTopic) {
-        Association association = dms.getAssociation(associationUri,//
-                wholeTopic.getId(), partTopic.getId(), WHOLE, PART, true, null);
-        return new TopicAssociation(association, partTopic);
-    }
-
-    public static TopicAssociation getRelatedPart(DeepaMehtaService dms, Topic wholeTopic,
-            String associationUri) {
-        RelatedTopic partTopic = wholeTopic.getRelatedTopic(associationUri,//
-                WHOLE, PART, null, false, false, null);
-        if (partTopic == null) {
-            return null;
-        } else {
-            return getRelatedPart(dms, associationUri, wholeTopic, partTopic);
-        }
-    }
-
-    public static List<TopicAssociation> getRelatedParts(DeepaMehtaService dms, Topic wholeTopic,
-            String associationUri) {
-        ArrayList<TopicAssociation> parts = new ArrayList<TopicAssociation>();
-        ResultSet<RelatedTopic> partTopics = wholeTopic.getRelatedTopics(associationUri,//
-                WHOLE, PART, null, false, false, 0, null);
-        for (RelatedTopic partTopic : partTopics) {
-            parts.add(getRelatedPart(dms, associationUri, wholeTopic, partTopic));
-        }
-        return parts;
-    }
 }

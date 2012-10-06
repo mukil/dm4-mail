@@ -76,7 +76,7 @@
                 {
                     type_uri: "dm4.webclient.view_config",
                     composite: {
-                        dm4.webclient.icon: "/de.deepamehta.mail/images/configure.png",
+                        dm4.webclient.icon: "de.deepamehta.mail/images/configure.png",
                         dm4.webclient.is_searchable_unit: true
                     }
                 }

@@ -1,6 +1,7 @@
 package de.deepamehta.plugins.mail;
 
 import static de.deepamehta.plugins.mail.MailPlugin.*;
+import static de.deepamehta.plugins.mail.TopicUtils.*;
 
 import java.io.UnsupportedEncodingException;
 import java.util.Date;
@@ -44,8 +45,9 @@ public class Mail {
     public Map<RecipientType, List<InternetAddress>> getRecipients()
             throws UnsupportedEncodingException {
         RecipientsByType results = new RecipientsByType();
-        for (TopicAssociation recipient : TopicUtils.getRelatedParts(dms, topic, RECIPIENT)) {
-            String personal = recipient.getTopic().getSimpleValue().toString();
+        for (RelatedTopic recipient : topic.getRelatedTopics(RECIPIENT,//
+                WHOLE, PART, null, false, true, 0, null)) {
+            String personal = recipient.getSimpleValue().toString();
             CompositeValue assocComposite = recipient.getAssociation().getCompositeValue();
             String typeUri = assocComposite.getTopic(RECIPIENT_TYPE).getUri();
             for (TopicModel email : assocComposite.getTopics(EMAIL_ADDRESS)) {
@@ -56,11 +58,12 @@ public class Mail {
     }
 
     public InternetAddress getSender() throws UnsupportedEncodingException {
-        TopicAssociation sender = TopicUtils.getRelatedPart(dms, topic, SENDER);
+        RelatedTopic sender = topic.getRelatedTopic(SENDER,//
+                WHOLE, PART, null, false, true, null);
         if (sender == null) {
             throw new IllegalArgumentException("sender address required");
         }
-        String personal = sender.getTopic().getSimpleValue().toString();
+        String personal = sender.getSimpleValue().toString();
         String address = sender.getAssociation().getCompositeValue()//
                 .getTopic(EMAIL_ADDRESS).getSimpleValue().toString();
         return new InternetAddress(address, personal);

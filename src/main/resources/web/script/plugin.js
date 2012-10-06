@@ -75,7 +75,7 @@ dm4c.add_plugin('dm4.mail.plugin', function () {
           commands.push({
             label: 'Write Mail',
             handler: writeMail,
-            context: ['context-menu']
+            context: ['context-menu', 'detail-panel-show']
           })
         }
       })
@@ -97,7 +97,7 @@ dm4c.add_plugin('dm4.mail.plugin', function () {
    * onSelect gets $(this) and the attached item.
    */
   this.createCompletionField = function (label, onSelect) {
-    var $elem = $('<input>').hide(),
+    var $elem = $('<input>').hide().blur(cancel),
       lastTerm = '', // save last request term
       $add = dm4c.ui.button(add, label).css('display', 'inline-block'),
       $cancel = dm4c.ui.button(cancel, 'Cancel').css('display', 'inline-block'),

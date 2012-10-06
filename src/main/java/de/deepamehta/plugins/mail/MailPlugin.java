@@ -5,7 +5,6 @@ import static de.deepamehta.plugins.mail.TopicUtils.*;
 import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
@@ -41,25 +40,28 @@ import de.deepamehta.core.model.TopicModel;
 import de.deepamehta.core.model.TopicRoleModel;
 import de.deepamehta.core.osgi.PluginActivator;
 import de.deepamehta.core.service.ClientState;
-import de.deepamehta.core.service.DeepaMehtaService;
 import de.deepamehta.core.service.Directives;
 import de.deepamehta.core.service.PluginService;
+import de.deepamehta.core.service.event.InitializePluginListener;
 import de.deepamehta.core.service.event.PluginServiceArrivedListener;
 import de.deepamehta.core.service.event.PluginServiceGoneListener;
 import de.deepamehta.core.service.event.PostCreateTopicListener;
+import de.deepamehta.core.service.event.PostInstallPluginListener;
 import de.deepamehta.plugins.accesscontrol.model.Operation;
 import de.deepamehta.plugins.accesscontrol.model.Permissions;
 import de.deepamehta.plugins.accesscontrol.model.UserRole;
 import de.deepamehta.plugins.accesscontrol.service.AccessControlService;
+import de.deepamehta.plugins.facets.service.FacetsService;
 import de.deepamehta.plugins.files.ResourceInfo;
 import de.deepamehta.plugins.files.service.FilesService;
 import de.deepamehta.plugins.mail.service.MailService;
 
 @Path("/mail")
 @Produces(MediaType.APPLICATION_JSON)
-public class MailPlugin extends PluginActivator implements //
-        MailService,//
+public class MailPlugin extends PluginActivator implements MailService,//
+        InitializePluginListener,//
         PostCreateTopicListener,//
+        PostInstallPluginListener,//
         PluginServiceArrivedListener,//
         PluginServiceGoneListener {
 
@@ -87,11 +89,17 @@ public class MailPlugin extends PluginActivator implements //
 
     private static Logger log = Logger.getLogger(MailPlugin.class.getName());
 
+    private AccessControlService acService;
+
+    private FacetsService facetsService;
+
     private FilesService fileService = null;
 
     private ImageCidEmbedment cidEmbedment = null;
 
     private MailConfigurationCache config = null;
+
+    private boolean isInstalled;
 
     /**
      * @see #associateRecipient(long, Topic, String)
@@ -124,13 +132,11 @@ public class MailPlugin extends PluginActivator implements //
         if (addresses.size() < 1) {
             throw new IllegalArgumentException("recipient must have at least one email");
         }
-        List<TopicModel> addressIds = new ArrayList<TopicModel>();
+
+        CompositeValue value = new CompositeValue().putRef(RECIPIENT_TYPE, type.getUri());
         for (TopicModel address : addresses) {
-            addressIds.add(new TopicModel(address.getId()));
+            value.add(EMAIL_ADDRESS, new TopicModel(address.getId()));
         }
-        CompositeValue value = new CompositeValue()//
-                .putRef(RECIPIENT_TYPE, type.getUri())//
-                .put(EMAIL_ADDRESS, addressIds);
 
         // find existing recipient association
         Association association = dms.getAssociation(RECIPIENT, //
@@ -207,7 +213,7 @@ public class MailPlugin extends PluginActivator implements //
             Map<Long, TopicModel> results = new HashMap<Long, TopicModel>();
             for (String uri : config.getSearchTypeUris()) {
                 String parentTypeUri = config.getParentOfSearchType(uri).getUri();
-                for (Topic topic : dms.searchTopics(term, uri, false, cookie)) {
+                for (Topic topic : dms.searchTopics(term + "*", uri, cookie)) {
                     Topic parentTopic = TopicUtils.getParentTopic(topic, parentTypeUri);
                     results.put(parentTopic.getId(), parentTopic.getModel());
                 }
@@ -238,16 +244,19 @@ public class MailPlugin extends PluginActivator implements //
             Topic topic = dms.createTopic(model, cookie);
 
             // copy sender association
-            TopicAssociation sender = TopicUtils.getRelatedPart(dms, mail, SENDER);
+            RelatedTopic sender = mail.getRelatedTopic(SENDER,//
+                    WHOLE, PART, null, false, true, cookie);
+
             dms.createAssociation(new AssociationModel(SENDER,//
-                    new TopicRoleModel(sender.getTopic().getId(), PART),//
+                    new TopicRoleModel(sender.getId(), PART),//
                     new TopicRoleModel(topic.getId(), WHOLE),//
                     sender.getAssociation().getCompositeValue()), cookie);
 
             // copy recipient associations
-            for (TopicAssociation recipient : TopicUtils.getRelatedParts(dms, mail, RECIPIENT)) {
+            for (RelatedTopic recipient : mail.getRelatedTopics(RECIPIENT,//
+                    WHOLE, PART, null, false, true, 0, null)) {
                 dms.createAssociation(new AssociationModel(RECIPIENT,//
-                        new TopicRoleModel(recipient.getTopic().getId(), PART),//
+                        new TopicRoleModel(recipient.getId(), PART),//
                         new TopicRoleModel(topic.getId(), WHOLE),//
                         recipient.getAssociation().getCompositeValue()), cookie);
             }
@@ -336,10 +345,11 @@ public class MailPlugin extends PluginActivator implements //
      */
     @GET
     @Path("/config/load")
-    public void loadConfiguration() {
+    public Boolean loadConfiguration() {
         try {
             log.info("load mail configuration");
             config = new MailConfigurationCache(dms);
+            return true;
         } catch (Exception e) {
             throw new WebApplicationException(e);
         }
@@ -428,9 +438,7 @@ public class MailPlugin extends PluginActivator implements //
      * Initialize configuration cache.
      */
     @Override
-    public void setCoreService(DeepaMehtaService dms) {
-        super.setCoreService(dms);
-        log.info("core service reference change");
+    public void initializePlugin() {
         loadConfiguration();
     }
 
@@ -440,12 +448,26 @@ public class MailPlugin extends PluginActivator implements //
     @Override
     public void pluginServiceArrived(PluginService service) {
         if (service instanceof FilesService) {
-            log.fine("file service arrived");
             fileService = (FilesService) service;
+        } else if (service instanceof AccessControlService) {
+            acService = (AccessControlService) service;
+        } else if (service instanceof FacetsService) {
+            facetsService = (FacetsService) service;
+        }
+        configureIfReady();
+    }
+
+    @Override
+    public void postInstallPlugin() {
+        isInstalled = true;
+        configureIfReady();
+    }
+
+    private void configureIfReady() {
+        if (isInstalled && acService != null && facetsService != null && fileService != null) {
             createAttachmentDirectory();
             cidEmbedment = new ImageCidEmbedment(dms, fileService);
-        } else if (service instanceof AccessControlService) {
-            checkACLsOfMigration((AccessControlService) service);
+            checkACLsOfMigration();
         }
     }
 
@@ -472,10 +494,10 @@ public class MailPlugin extends PluginActivator implements //
     }
 
     private void associateDefaultSender(Topic mail, ClientState clientState) {
-        TopicAssociation sender = config.getDefaultSender();
+        RelatedTopic sender = config.getDefaultSender();
         if (sender != null) {
             log.fine("set default sender of mail " + mail.getId());
-            createSender(mail.getId(), sender.getTopic(),//
+            createSender(mail.getId(), sender,//
                     sender.getAssociation().getCompositeValue(), clientState);
         }
     }
@@ -504,15 +526,17 @@ public class MailPlugin extends PluginActivator implements //
         }
     }
 
-    private void checkACLsOfMigration(AccessControlService acs) {
+    private void checkACLsOfMigration() {
         Topic config = dms.getTopic("uri", new SimpleValue("dm4.mail.config"), false, null);
-        if (acs.getCreator(config) == null) {
+        log.info("GET ACLS OF MIGRATION: " + config);
+        if (acService.getCreator(config) == null) {
             log.info("initial ACL update of configuration");
-            Topic admin = acs.getUsername("admin");
-            acs.setCreator(config, admin.getId());
-            acs.setOwner(config, admin.getId());
-            acs.createACLEntry(config, UserRole.OWNER,//
+            Topic admin = acService.getUsername("admin");
+            acService.setCreator(config, admin.getId());
+            acService.setOwner(config, admin.getId());
+            acService.createACLEntry(config, UserRole.OWNER,//
                     new Permissions().add(Operation.WRITE, true));
         }
     }
+
 }
