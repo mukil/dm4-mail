@@ -1,19 +1,19 @@
 dm4c.add_plugin('dm4.mail.plugin', function () {
 
   function autoComplete(term) {
-    return dm4c.restc.request('GET', '/mail/autocomplete/' + term).items
+    return dm4c.restc.request('GET', 'mail/autocomplete/' + term).items
   }
 
   function getSearchableParentTypes() {
-    return dm4c.restc.request('GET', '/mail/search/parents').items
+    return dm4c.restc.request('GET', 'mail/search/parents').items
   }
 
   function reloadConfiguration() {
-    dm4c.restc.request('GET', '/mail/config/load')
+    dm4c.restc.request('GET', 'mail/config/load')
   }
 
   function copyMail() {
-    var mail = dm4c.restc.request('POST', '/mail/' + dm4c.selected_object.id + '/copy')
+    var mail = dm4c.restc.request('POST', 'mail/' + dm4c.selected_object.id + '/copy')
     dm4c.show_topic(new Topic(mail), 'edit', null, true)
   }
 
@@ -23,13 +23,13 @@ dm4c.add_plugin('dm4.mail.plugin', function () {
   }
 
   function sendMail() {
-    var mail = dm4c.restc.request('POST', '/mail/' + dm4c.selected_object.id + '/send')
+    var mail = dm4c.restc.request('POST', 'mail/' + dm4c.selected_object.id + '/send')
     dm4c.show_topic(new Topic(mail), 'show', null, true)
   }
 
   // create a new mail with one recipient (the actual contact)
   function writeMail() {
-    var mail = dm4c.restc.request('POST', '/mail/write/' + dm4c.selected_object.id)
+    var mail = dm4c.restc.request('POST', 'mail/write/' + dm4c.selected_object.id)
     // TODO render recipient association
     dm4c.do_reveal_related_topic(mail.id)
     dm4c.show_topic(new Topic(mail), 'edit', null, true)

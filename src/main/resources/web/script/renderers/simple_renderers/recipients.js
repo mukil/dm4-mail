@@ -20,11 +20,11 @@
   }
 
   function getRecipientTypes() {
-    return dm4c.restc.request('GET', '/mail/recipient/types').items
+    return dm4c.restc.request('GET', 'mail/recipient/types').items
   }
 
   function associate(mailId, recipientId) {
-    return dm4c.restc.request('POST', '/mail/' + mailId + '/recipient/' + recipientId)
+    return dm4c.restc.request('POST', 'mail/' + mailId + '/recipient/' + recipientId)
   }
 
   // --- callbacks ---------------------------------------------------
@@ -144,7 +144,7 @@
       if ($.isEmptyObject(pluginResults)) {
         $parent.append(dm4c.render.topic_list(getRecipientTopics(mail.id)))
       } else {
-        $parent.append(createRecipientListView(mail.id))
+        //$parent.append(createRecipientListView(mail.id))
       }
     },
 
@@ -157,9 +157,9 @@
       if ($.isEmptyObject(pluginResults)) {
         $parent.append(createRecipientEditorList(mail.id))
       } else {
-        $parent.append(toogleWithFirstGet('Edit', function ($div) {
-          $div.append(createRecipientEditorList(mail.id))
-        }))
+        //$parent.append(toogleWithFirstGet('Edit', function ($div) {
+        //  $div.append(createRecipientEditorList(mail.id))
+        //}))
       }
 
       return function () {
