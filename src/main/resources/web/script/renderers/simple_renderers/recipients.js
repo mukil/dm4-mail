@@ -62,7 +62,8 @@
   }
 
   function createRecipientEditor(mailId, recipient, $types) {
-    function click() {
+    function click(event) {
+      event.preventDefault()
       dm4c.do_reveal_related_topic(recipient.id)
     }
 
@@ -137,7 +138,7 @@
     render_info: function (model, $parent) {
       dm4c.render.field_label(model, $parent)
       var mail = model.toplevel_topic,
-        pluginResults = dm4c.fire_event('render_mail_recipients_info', mail)
+        pluginResults = dm4c.fire_event('render_mail_recipients', mail)
       $.each(pluginResults, function (r, $info) {
         $parent.append($info)
       })
@@ -150,7 +151,7 @@
 
     render_form: function (model, $parent) {
       var mail = model.toplevel_topic,
-        pluginResults = dm4c.fire_event('render_mail_recipients_form', mail)
+        pluginResults = dm4c.fire_event('render_mail_recipients')
       $.each(pluginResults, function (r, $info) {
         $parent.append($info)
       })
@@ -163,7 +164,7 @@
       }
 
       return function () {
-        return true // set dummy field after edit
+        return $.isEmptyObject(pluginResults) ? true : false // set dummy field after edit
       }
     }
   })

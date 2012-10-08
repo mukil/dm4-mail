@@ -2,19 +2,20 @@
 {
     topic_types: [
         {
-            value: "Recipient Type",
-            uri: "dm4.mail.recipient.type",
-            data_type_uri: "dm4.core.text"
+            value: "Body",
+            uri: "dm4.mail.body",
+            data_type_uri: "dm4.core.html",
+            index_mode_uris: ["dm4.core.fulltext"]
         },
         {
-            value: "Recipients",
-            uri: "dm4.mail.recipient.list",
-            data_type_uri: "dm4.core.boolean",
+            value: "Sent Date",
+            uri: "dm4.mail.date",
+            data_type_uri: "dm4.core.text",
             view_config_topics: [
-                { # dummy field to hold the renderer, that directly creates recipient associations
+                {
                     type_uri: "dm4.webclient.view_config",
                     composite: {
-                        dm4.webclient.simple_renderer_uri: "dm4.mail.recipient.renderer"
+                        dm4.webclient.editable: false
                     }
                 }
             ]
@@ -33,26 +34,58 @@
             ]
         },
         {
-            value: "Mail Subject",
+            value: "Recipients",
+            uri: "dm4.mail.recipient.list",
+            data_type_uri: "dm4.core.boolean",
+            view_config_topics: [
+                { # dummy field to hold the renderer, that directly creates recipient associations
+                    type_uri: "dm4.webclient.view_config",
+                    composite: {
+                        dm4.webclient.simple_renderer_uri: "dm4.mail.recipient.renderer"
+                    }
+                }
+            ]
+        },
+        {
+            value: "Recipient Type",
+            uri: "dm4.mail.recipient.type",
+            data_type_uri: "dm4.core.text"
+        },
+        {
+            value: "Subject",
             uri: "dm4.mail.subject",
             data_type_uri: "dm4.core.text",
             index_mode_uris: ["dm4.core.fulltext"]
         },
         {
-            value: "Mail Body",
-            uri: "dm4.mail.body",
-            data_type_uri: "dm4.core.html",
-            index_mode_uris: ["dm4.core.fulltext"]
-        },
-        {
-            value: "Mail Sent Date",
-            uri: "dm4.mail.date",
-            data_type_uri: "dm4.core.text",
+            value: "Signature",
+            uri: "dm4.mail.signature",
+            data_type_uri: "dm4.core.composite",
+            label_config: [ "dm4.mail.subject" ],
+            assoc_defs: [
+                {
+                    part_topic_type_uri:   "dm4.mail.subject",
+                    part_cardinality_uri:  "dm4.core.one",
+                    assoc_type_uri:        "dm4.core.composition_def"
+                },
+                {
+                    part_topic_type_uri:   "dm4.mail.from",
+                    part_cardinality_uri:  "dm4.core.one",
+                    assoc_type_uri:        "dm4.core.composition_def"
+                },
+                {
+                    part_topic_type_uri:   "dm4.mail.body",
+                    part_cardinality_uri:  "dm4.core.one",
+                    assoc_type_uri:        "dm4.core.composition_def"
+                }
+            ],
             view_config_topics: [
                 {
                     type_uri: "dm4.webclient.view_config",
                     composite: {
-                        dm4.webclient.editable: false
+                        dm4.webclient.icon: "de.deepamehta.mail/images/signature.png",
+                        dm4.webclient.add_to_create_menu: true,
+                        dm4.webclient.is_searchable_unit: true
                     }
                 }
             ]
@@ -61,19 +94,12 @@
             value: "Mail",
             uri: "dm4.mail",
             data_type_uri: "dm4.core.composite",
+            label_config: [ "dm4.mail.subject" ],
             assoc_defs: [
                 {
                     part_topic_type_uri:   "dm4.mail.subject",
                     part_cardinality_uri:  "dm4.core.one",
-                    assoc_type_uri:        "dm4.core.composition_def",
-                    view_config_topics: [
-                        {
-                            type_uri: "dm4.webclient.view_config",
-                            composite: {
-                                dm4.webclient.simple_renderer_uri: "dm4.webclient.title_renderer"
-                            }
-                        }
-                    ]
+                    assoc_type_uri:        "dm4.core.composition_def"
                 },
                 {
                     part_topic_type_uri:   "dm4.mail.from",
@@ -91,6 +117,21 @@
                     assoc_type_uri:        "dm4.core.composition_def"
                 },
                 {
+                    part_topic_type_uri:   "dm4.mail.signature",
+                    part_cardinality_uri:  "dm4.core.many", # should be one
+                    whole_cardinality_uri: "dm4.core.many",
+                    assoc_type_uri:        "dm4.core.aggregation_def",
+                    view_config_topics: [
+                        { # use a many aggregation to inject a renderer that only supports one part
+                            type_uri: "dm4.webclient.view_config",
+                            composite: {
+                                dm4.webclient.editable: true,
+                                dm4.webclient.multi_renderer_uri: "dm4.mail.signature.renderer"
+                            }
+                        }
+                    ]
+                },
+                {
                     part_topic_type_uri:   "dm4.mail.date",
                     part_cardinality_uri:  "dm4.core.one",
                     assoc_type_uri:        "dm4.core.composition_def"
@@ -98,7 +139,7 @@
                 {
                     part_topic_type_uri:   "dm4.files.file",
                     part_cardinality_uri:  "dm4.core.many",
-                    whole_cardinality_uri: "dm4.core.one",
+                    whole_cardinality_uri: "dm4.core.many",
                     assoc_type_uri:        "dm4.core.aggregation_def",
                     view_config_topics: [
                         {
@@ -110,9 +151,6 @@
                         }
                     ]
                 }
-            ],
-            label_config: [
-                "dm4.mail.subject"
             ],
             view_config_topics: [
                 {
@@ -127,7 +165,10 @@
         }
     ],
     assoc_types: [
-        {
+        { # sender of a mail
+          # default sender in mail configuration
+          # user account specific sender
+          # contact specific signature
             value: "Sender",
             uri: "dm4.mail.sender",
             data_type_uri: "dm4.core.composite",
@@ -151,7 +192,7 @@
                     whole_cardinality_uri: "dm4.core.one",
                     assoc_type_uri:        "dm4.core.aggregation_def"
                 },
-                { # actual selected email address (direct recipient child)
+                { # actual selected email addresses (direct recipient child)
                     part_topic_type_uri:   "dm4.contacts.email_address",
                     part_cardinality_uri:  "dm4.core.many",
                     whole_cardinality_uri: "dm4.core.one",

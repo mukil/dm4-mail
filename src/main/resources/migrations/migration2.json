@@ -21,19 +21,6 @@
             data_type_uri: "dm4.core.text"
         },
         {
-            value: "Default Sender",
-            uri: "dm4.mail.config.sender",
-            data_type_uri: "dm4.core.boolean",
-            view_config_topics: [
-                { # dummy field to hold the renderer, that directly creates the sender association
-                    type_uri: "dm4.webclient.view_config",
-                    composite: {
-                        dm4.webclient.simple_renderer_uri: "dm4.mail.sender.renderer"
-                    }
-                }
-            ]
-        },
-        {
             value: "Mail Configuration",
             uri: "dm4.mail.config.type",
             data_type_uri: "dm4.core.composite",
@@ -51,7 +38,7 @@
                 {
                     assoc_type_uri:        "dm4.core.composition_def",
                     part_cardinality_uri:  "dm4.core.one",
-                    part_topic_type_uri:   "dm4.mail.config.sender"
+                    part_topic_type_uri:   "dm4.mail.from"
                 },
                 { # default recipient type
                     assoc_type_uri:        "dm4.core.aggregation_def",
@@ -63,10 +50,10 @@
                   # parent of each aggregation needs at least one dm4.contacts.email_address
                   # !!! aggregate composite list works at this level
                   # !!! webclient edit works too directly after running the migration
-                    assoc_type_uri:        "dm4.core.aggregation_def",
-                    part_cardinality_uri:  "dm4.core.many",
                     part_topic_type_uri:   "dm4.core.topic_type",
-                    whole_cardinality_uri: "dm4.core.one"
+                    part_cardinality_uri:  "dm4.core.many",
+                    whole_cardinality_uri: "dm4.core.many",
+                    assoc_type_uri:        "dm4.core.aggregation_def"
                 }
             ],
             label_config: [

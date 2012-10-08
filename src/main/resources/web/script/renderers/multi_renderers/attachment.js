@@ -14,6 +14,8 @@
    */
   function TopicIdCache(topics) {
 
+    var removed = {}
+
     return {
 
       getValues: function () {
@@ -21,14 +23,19 @@
         $.each(topics, function (id, topic) {
           values.push(dm4c.REF_PREFIX + id)
         })
+        $.each(removed, function (id, topic) {
+          values.push(dm4c.DEL_PREFIX + id)
+        })
         return values
       },
 
       push: function (topic) {
         topics[topic.id] = topic
+        delete removed[topic.id]
       },
 
       remove: function (topic) {
+        removed[topic.id] = topic
         delete topics[topic.id]
       }
     }
@@ -42,7 +49,8 @@
    * @return {jQuery}
    */
   function createAttachmentLink(file) {
-    function click() {
+    function click(event) {
+      event.preventDefault()
       dm4c.do_reveal_related_topic(file.id)
     }
 

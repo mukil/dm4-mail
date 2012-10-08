@@ -85,7 +85,11 @@ public class MailPlugin extends PluginActivator implements MailService,//
 
     public static final String SENDER = "dm4.mail.sender";
 
+    public static final String SIGNATURE = "dm4.mail.signature";
+
     public static final String SUBJECT = "dm4.mail.subject";
+
+    private static final String USER_ACCOUNT = "dm4.accesscontrol.user_account";
 
     private static Logger log = Logger.getLogger(MailPlugin.class.getName());
 
@@ -139,10 +143,9 @@ public class MailPlugin extends PluginActivator implements MailService,//
         }
 
         // find existing recipient association
-        Association association = dms.getAssociation(RECIPIENT, //
-                mailId, recipient.getId(), WHOLE, PART, false, clientState);
+        Association association = getRecipientAssociation(mailId, recipient.getId(), clientState);
         if (association == null) { // create a recipient association
-            return createRecipient(mailId, recipient, value, clientState);
+            return associateRecipient(mailId, recipient, value, clientState);
         } else { // update address and type references
             association.setCompositeValue(value, clientState, new Directives());
             return association;
@@ -177,16 +180,14 @@ public class MailPlugin extends PluginActivator implements MailService,//
         CompositeValue value = new CompositeValue().putRef(EMAIL_ADDRESS, addresses.get(0).getId());
 
         // find existing sender association
-        RelatedTopic oldSender = dms.getTopic(mailId, false, clientState)//
-                .getRelatedTopic(SENDER, WHOLE, PART, null, false, false, clientState);
+        RelatedTopic oldSender = getSender(mailId, false, clientState);
         if (oldSender == null) { // create the first sender association
-            return createSender(mailId, sender, value, clientState);
+            return associateSender(mailId, sender, value, clientState);
         } else { // update or delete the old sender
-            Association association = dms.getAssociation(SENDER,//
-                    mailId, oldSender.getId(), WHOLE, PART, false, clientState);
+            Association association = getSenderAssociation(mailId, oldSender.getId(), clientState);
             if (sender.getId() != oldSender.getId()) { // delete the old one
                 dms.deleteAssociation(association.getId(), clientState);
-                association = createSender(mailId, sender, value, clientState);
+                association = associateSender(mailId, sender, value, clientState);
             } else { // update composite
                 association.setCompositeValue(value, clientState, new Directives());
             }
@@ -244,21 +245,14 @@ public class MailPlugin extends PluginActivator implements MailService,//
             Topic topic = dms.createTopic(model, cookie);
 
             // copy sender association
-            RelatedTopic sender = mail.getRelatedTopic(SENDER,//
-                    WHOLE, PART, null, false, true, cookie);
-
-            dms.createAssociation(new AssociationModel(SENDER,//
-                    new TopicRoleModel(sender.getId(), PART),//
-                    new TopicRoleModel(topic.getId(), WHOLE),//
-                    sender.getAssociation().getCompositeValue()), cookie);
+            RelatedTopic sender = getSender(mail, true, cookie);
+            associateSender(mailId, sender, sender.getAssociation().getCompositeValue(), cookie);
 
             // copy recipient associations
             for (RelatedTopic recipient : mail.getRelatedTopics(RECIPIENT,//
                     WHOLE, PART, null, false, true, 0, null)) {
-                dms.createAssociation(new AssociationModel(RECIPIENT,//
-                        new TopicRoleModel(recipient.getId(), PART),//
-                        new TopicRoleModel(topic.getId(), WHOLE),//
-                        recipient.getAssociation().getCompositeValue()), cookie);
+                associateRecipient(mailId, recipient,//
+                        recipient.getAssociation().getCompositeValue(), cookie);
             }
             return topic;
         } catch (Exception e) {
@@ -356,7 +350,7 @@ public class MailPlugin extends PluginActivator implements MailService,//
     }
 
     /**
-     * Sets the default sender of a mail topic after creation.
+     * Sets the default sender and signature of a mail topic after creation.
      */
     @Override
     public void postCreateTopic(Topic topic, ClientState clientState, Directives directives) {
@@ -479,26 +473,15 @@ public class MailPlugin extends PluginActivator implements MailService,//
         }
     }
 
-    private Association createRecipient(long mailId, Topic recipient, CompositeValue value,
-            ClientState clientState) {
-        return dms.createAssociation(new AssociationModel(RECIPIENT,//
-                new TopicRoleModel(recipient.getId(), PART),//
-                new TopicRoleModel(mailId, WHOLE), value), clientState);
-    }
-
-    private Association createSender(long mailId, Topic sender, CompositeValue value,
-            ClientState clientState) {
-        return dms.createAssociation(new AssociationModel(SENDER,//
-                new TopicRoleModel(sender.getId(), PART),//
-                new TopicRoleModel(mailId, WHOLE), value), clientState);
-    }
-
-    private void associateDefaultSender(Topic mail, ClientState clientState) {
-        RelatedTopic sender = config.getDefaultSender();
-        if (sender != null) {
-            log.fine("set default sender of mail " + mail.getId());
-            createSender(mail.getId(), sender,//
-                    sender.getAssociation().getCompositeValue(), clientState);
+    private void checkACLsOfMigration() {
+        Topic config = dms.getTopic("uri", new SimpleValue("dm4.mail.config"), false, null);
+        if (acService.getCreator(config) == null) {
+            log.info("initial ACL update of configuration");
+            Topic admin = acService.getUsername("admin");
+            acService.setCreator(config, admin.getId());
+            acService.setOwner(config, admin.getId());
+            acService.createACLEntry(config, UserRole.OWNER,//
+                    new Permissions().add(Operation.WRITE, true));
         }
     }
 
@@ -526,17 +509,65 @@ public class MailPlugin extends PluginActivator implements MailService,//
         }
     }
 
-    private void checkACLsOfMigration() {
-        Topic config = dms.getTopic("uri", new SimpleValue("dm4.mail.config"), false, null);
-        log.info("GET ACLS OF MIGRATION: " + config);
-        if (acService.getCreator(config) == null) {
-            log.info("initial ACL update of configuration");
-            Topic admin = acService.getUsername("admin");
-            acService.setCreator(config, admin.getId());
-            acService.setOwner(config, admin.getId());
-            acService.createACLEntry(config, UserRole.OWNER,//
-                    new Permissions().add(Operation.WRITE, true));
+    private void associateDefaultSender(Topic mail, ClientState clientState) {
+        // get user account specific sender
+        Topic creator = TopicUtils.getParentTopic(acService.getCreator(mail), USER_ACCOUNT);
+        RelatedTopic sender = getSender(creator, false, clientState);
+
+        if (sender == null) { // get the configured default sender instead
+            sender = config.getDefaultSender();
+        }
+
+        if (sender != null) {
+            associateSender(mail.getId(), sender,//
+                    sender.getAssociation().getCompositeValue(), clientState);
+            RelatedTopic signature = getSignature(sender, clientState);
+            associateSignature(mail.getId(), signature.getId(), clientState);
         }
     }
 
+    private Association associateRecipient(long topicId, Topic recipient, CompositeValue value,
+            ClientState clientState) {
+        return dms.createAssociation(new AssociationModel(RECIPIENT,//
+                new TopicRoleModel(recipient.getId(), PART),//
+                new TopicRoleModel(topicId, WHOLE), value), clientState);
+    }
+
+    private Association associateSender(long topicId, Topic sender, CompositeValue value,
+            ClientState clientState) {
+        return dms.createAssociation(new AssociationModel(SENDER,//
+                new TopicRoleModel(sender.getId(), PART),//
+                new TopicRoleModel(topicId, WHOLE), value), clientState);
+    }
+
+    private Association associateSignature(long mailId, long signatureId, ClientState clientState) {
+        return dms.createAssociation(new AssociationModel(AGGREGATION,//
+                new TopicRoleModel(signatureId, PART),//
+                new TopicRoleModel(mailId, WHOLE)), clientState);
+    }
+
+    private Association getRecipientAssociation(long topicId, long recipientId,
+            ClientState clientState) {
+        return dms.getAssociation(RECIPIENT, topicId, recipientId, WHOLE, PART, false, clientState);
+    }
+
+    private RelatedTopic getSender(long topicId, boolean fetchRelatingComposite,
+            ClientState clientState) {
+        return getSender(dms.getTopic(topicId, false, clientState),//
+                fetchRelatingComposite, clientState);
+    }
+
+    private RelatedTopic getSender(Topic topic, boolean fetchRelatingComposite,
+            ClientState clientState) {
+        return topic.getRelatedTopic(SENDER, WHOLE, PART, null, false,//
+                fetchRelatingComposite, clientState);
+    }
+
+    private RelatedTopic getSignature(Topic topic, ClientState clientState) {
+        return topic.getRelatedTopic(SENDER, PART, WHOLE, SIGNATURE, false, false, clientState);
+    }
+
+    private Association getSenderAssociation(long topicId, long senderId, ClientState clientState) {
+        return dms.getAssociation(SENDER, topicId, senderId, WHOLE, PART, false, clientState);
+    }
 }

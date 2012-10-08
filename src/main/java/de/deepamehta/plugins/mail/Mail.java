@@ -39,7 +39,9 @@ public class Mail {
     }
 
     public String getBody() {
-        return topic.getCompositeValue().getTopic(BODY).getSimpleValue().toString();
+        return topic.getCompositeValue().getTopic(BODY).getSimpleValue().toString()
+                + topic.getCompositeValue().getTopics(SIGNATURE).get(0).getCompositeValue()
+                        .getTopic(BODY).getSimpleValue().toString();
     }
 
     public Map<RecipientType, List<InternetAddress>> getRecipients()

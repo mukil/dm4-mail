@@ -19,7 +19,8 @@
   }
 
   function updateSenderView($topic, sender, association) {
-    function click() {
+    function click(event) {
+      event.preventDefault()
       dm4c.do_reveal_related_topic(sender.id)
     }
 
