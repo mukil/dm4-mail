@@ -83,6 +83,10 @@ public class MailConfigurationCache {
         return config;
     }
 
+    public Topic getTopic() {
+        return getConfiguration();
+    }
+
     public RecipientType getDefaultRecipientType() {
         if (defaultRecipientType == null) {
             log.info("reveal default recipient type");

@@ -13,8 +13,13 @@ dm4c.add_plugin('dm4.mail.plugin', function () {
   }
 
   function copyMail() {
-    var mail = dm4c.restc.request('POST', 'mail/' + dm4c.selected_object.id + '/copy')
-    dm4c.show_topic(new Topic(mail), 'edit', null, true)
+    var pluginResults = dm4c.fire_event('copy_mail')
+    if ($.isEmptyObject(pluginResults)) { // copy it
+      var mail = dm4c.restc.request('POST', 'mail/' + dm4c.selected_object.id + '/copy?recipients=true')
+      dm4c.show_topic(new Topic(mail), 'edit', null, true)
+    } else { // plugin copied it before
+      dm4c.show_topic(new Topic(pluginResults[0]), 'edit', null, true)
+    }
   }
 
   function saveAndSendMail() {
@@ -23,8 +28,13 @@ dm4c.add_plugin('dm4.mail.plugin', function () {
   }
 
   function sendMail() {
-    var mail = dm4c.restc.request('POST', 'mail/' + dm4c.selected_object.id + '/send')
-    dm4c.show_topic(new Topic(mail), 'show', null, true)
+    var pluginResults = dm4c.fire_event('send_mail')
+    if ($.isEmptyObject(pluginResults)) { // send it
+      var mail = dm4c.restc.request('POST', 'mail/' + dm4c.selected_object.id + '/send')
+      dm4c.show_topic(new Topic(mail), 'show', null, true)
+    } else { // plugin sends it before
+      dm4c.show_topic(new Topic(pluginResults[0]), 'show', null, true)
+    }
   }
 
   // create a new mail with one recipient (the actual contact)

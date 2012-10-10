@@ -30,6 +30,7 @@ import org.apache.commons.mail.HtmlEmail;
 import org.jsoup.nodes.Document;
 
 import de.deepamehta.core.Association;
+import de.deepamehta.core.DeepaMehtaTransaction;
 import de.deepamehta.core.RelatedTopic;
 import de.deepamehta.core.ResultSet;
 import de.deepamehta.core.Topic;
@@ -46,7 +47,6 @@ import de.deepamehta.core.service.event.InitializePluginListener;
 import de.deepamehta.core.service.event.PluginServiceArrivedListener;
 import de.deepamehta.core.service.event.PluginServiceGoneListener;
 import de.deepamehta.core.service.event.PostCreateTopicListener;
-import de.deepamehta.core.service.event.PostInstallPluginListener;
 import de.deepamehta.plugins.accesscontrol.model.Operation;
 import de.deepamehta.plugins.accesscontrol.model.Permissions;
 import de.deepamehta.plugins.accesscontrol.model.UserRole;
@@ -61,7 +61,6 @@ import de.deepamehta.plugins.mail.service.MailService;
 public class MailPlugin extends PluginActivator implements MailService,//
         InitializePluginListener,//
         PostCreateTopicListener,//
-        PostInstallPluginListener,//
         PluginServiceArrivedListener,//
         PluginServiceGoneListener {
 
@@ -103,7 +102,7 @@ public class MailPlugin extends PluginActivator implements MailService,//
 
     private MailConfigurationCache config = null;
 
-    private boolean isInstalled;
+    private boolean isInitialized;
 
     /**
      * @see #associateRecipient(long, Topic, String)
@@ -231,32 +230,48 @@ public class MailPlugin extends PluginActivator implements MailService,//
      * 
      * @param mailId
      *            ID of the mail topic to clone.
+     * @param includeRecipients
+     *            Copy recipients of the origin?
      * @param cookie
      *            Actual cookie.
      * @return Cloned mail topic with associated sender and recipients.
      */
     @POST
     @Path("/{mail}/copy")
-    public Topic copyMail(@PathParam("mail") long mailId, @HeaderParam("Cookie") ClientState cookie) {
+    public Topic copyMail(//
+            @PathParam("mail") long mailId,//
+            @QueryParam("recipients") boolean includeRecipients,//
+            @HeaderParam("Cookie") ClientState cookie) {
         log.info("copy mail " + mailId);
+        DeepaMehtaTransaction tx = dms.beginTx();
         try {
             Topic mail = dms.getTopic(mailId, true, cookie);
             TopicModel model = new TopicModel(MAIL, mail.getCompositeValue().put(DATE, ""));
-            Topic topic = dms.createTopic(model, cookie);
+            Topic clone = dms.createTopic(model, cookie);
+
+            // copy signature
+            Topic signature = getSignature(mail, cookie);
+            associateSignature(clone.getId(), signature.getId(), cookie);
 
             // copy sender association
             RelatedTopic sender = getSender(mail, true, cookie);
-            associateSender(mailId, sender, sender.getAssociation().getCompositeValue(), cookie);
+            associateSender(clone.getId(), sender,//
+                    sender.getAssociation().getCompositeValue(), cookie);
 
             // copy recipient associations
-            for (RelatedTopic recipient : mail.getRelatedTopics(RECIPIENT,//
-                    WHOLE, PART, null, false, true, 0, null)) {
-                associateRecipient(mailId, recipient,//
-                        recipient.getAssociation().getCompositeValue(), cookie);
+            if (includeRecipients) {
+                for (RelatedTopic recipient : mail.getRelatedTopics(RECIPIENT,//
+                        WHOLE, PART, null, false, true, 0, null)) {
+                    associateRecipient(clone.getId(), recipient,//
+                            recipient.getAssociation().getCompositeValue(), cookie);
+                }
             }
-            return topic;
+            tx.success();
+            return clone;
         } catch (Exception e) {
             throw new WebApplicationException(e);
+        } finally {
+            tx.finish();
         }
     }
 
@@ -339,11 +354,11 @@ public class MailPlugin extends PluginActivator implements MailService,//
      */
     @GET
     @Path("/config/load")
-    public Boolean loadConfiguration() {
+    public Topic loadConfiguration() {
         try {
             log.info("load mail configuration");
             config = new MailConfigurationCache(dms);
-            return true;
+            return config.getTopic();
         } catch (Exception e) {
             throw new WebApplicationException(e);
         }
@@ -433,7 +448,8 @@ public class MailPlugin extends PluginActivator implements MailService,//
      */
     @Override
     public void initializePlugin() {
-        loadConfiguration();
+        isInitialized = true;
+        configureIfReady();
     }
 
     /**
@@ -451,17 +467,12 @@ public class MailPlugin extends PluginActivator implements MailService,//
         configureIfReady();
     }
 
-    @Override
-    public void postInstallPlugin() {
-        isInstalled = true;
-        configureIfReady();
-    }
-
     private void configureIfReady() {
-        if (isInstalled && acService != null && facetsService != null && fileService != null) {
+        if (isInitialized && acService != null && facetsService != null && fileService != null) {
             createAttachmentDirectory();
-            cidEmbedment = new ImageCidEmbedment(dms, fileService);
             checkACLsOfMigration();
+            cidEmbedment = new ImageCidEmbedment(dms, fileService);
+            loadConfiguration();
         }
     }
 
@@ -513,7 +524,6 @@ public class MailPlugin extends PluginActivator implements MailService,//
         // get user account specific sender
         Topic creator = TopicUtils.getParentTopic(acService.getCreator(mail), USER_ACCOUNT);
         RelatedTopic sender = getSender(creator, false, clientState);
-
         if (sender == null) { // get the configured default sender instead
             sender = config.getDefaultSender();
         }
@@ -521,7 +531,7 @@ public class MailPlugin extends PluginActivator implements MailService,//
         if (sender != null) {
             associateSender(mail.getId(), sender,//
                     sender.getAssociation().getCompositeValue(), clientState);
-            RelatedTopic signature = getSignature(sender, clientState);
+            RelatedTopic signature = getContactSignature(sender, clientState);
             associateSignature(mail.getId(), signature.getId(), clientState);
         }
     }
@@ -546,6 +556,10 @@ public class MailPlugin extends PluginActivator implements MailService,//
                 new TopicRoleModel(mailId, WHOLE)), clientState);
     }
 
+    private RelatedTopic getContactSignature(Topic topic, ClientState clientState) {
+        return topic.getRelatedTopic(SENDER, PART, WHOLE, SIGNATURE, false, false, clientState);
+    }
+
     private Association getRecipientAssociation(long topicId, long recipientId,
             ClientState clientState) {
         return dms.getAssociation(RECIPIENT, topicId, recipientId, WHOLE, PART, false, clientState);
@@ -563,8 +577,9 @@ public class MailPlugin extends PluginActivator implements MailService,//
                 fetchRelatingComposite, clientState);
     }
 
-    private RelatedTopic getSignature(Topic topic, ClientState clientState) {
-        return topic.getRelatedTopic(SENDER, PART, WHOLE, SIGNATURE, false, false, clientState);
+    private Topic getSignature(Topic mail, ClientState clientState) {
+        return mail.getRelatedTopics(AGGREGATION, WHOLE, PART,//
+                SIGNATURE, false, false, 1, clientState).iterator().next();
     }
 
     private Association getSenderAssociation(long topicId, long senderId, ClientState clientState) {
