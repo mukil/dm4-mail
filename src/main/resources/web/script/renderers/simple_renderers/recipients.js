@@ -137,7 +137,7 @@
 
     render_info: function (model, $parent) {
       dm4c.render.field_label(model, $parent)
-      var mail = model.toplevel_topic,
+      var mail = model.toplevel_object,
         pluginResults = dm4c.fire_event('render_mail_recipients', mail)
       $.each(pluginResults, function (r, $info) {
         $parent.append($info)
@@ -150,7 +150,7 @@
     },
 
     render_form: function (model, $parent) {
-      var mail = model.toplevel_topic,
+      var mail = model.toplevel_object,
         pluginResults = dm4c.fire_event('render_mail_recipients')
       $.each(pluginResults, function (r, $info) {
         $parent.append($info)

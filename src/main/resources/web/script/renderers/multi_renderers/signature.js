@@ -40,16 +40,16 @@
 
     render_info: function (pages, $parent, level) {
       $.each(pages, function (p, page) { // only one signature is associated
-        dm4c.render.field_label(page.topic_type.value, $parent)
-        if (page.topic.id !== -1) { // ignore empty default page model
-          $parent.append($('<div>').append(getSignatureBody(page.topic.id)))
+        dm4c.render.field_label(page.object_type.value, $parent)
+        if (page.object.id !== -1) { // ignore empty default page model
+          $parent.append($('<div>').append(getSignatureBody(page.object.id)))
         }
       })
     },
 
     render_form: function (pages, $parent, level) {
       var deselectedId = 0,
-        selectedId = getSignatureOfMail(pages[0].toplevel_topic.id).id,
+        selectedId = getSignatureOfMail(pages[0].toplevel_object.id).id,
         $signature = $('<div>').append(getSignatureBody(selectedId)),
         menu = createSignatureMenu(selectedId, function (signature) {
           if (selectedId !== -1 && selectedId !== signature.value) {

@@ -39,7 +39,7 @@
   dm4c.add_simple_renderer('dm4.mail.sender.renderer', {
 
     render_info: function (model, $parent) {
-      var topic = model.toplevel_topic,
+      var topic = model.toplevel_object,
         sender = getSenderTopics(topic.id),
         $sender = dm4c.render.topic_list(sender)
       dm4c.render.field_label(model, $parent)
@@ -47,7 +47,7 @@
     },
 
     render_form: function (model, $parent) {
-      var topic = model.toplevel_topic,
+      var topic = model.toplevel_object,
         $sender = $('<div>')
 
       $.each(getSenderTopics(topic.id), function (s, sender) { // only one sender is supported

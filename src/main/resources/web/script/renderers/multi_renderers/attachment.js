@@ -105,8 +105,8 @@
     render_info: function (pages, $parent, level) {
       dm4c.render.field_label('Attachments', $parent)
       $.each(pages, function (p, page) {
-        if (page.topic.id !== -1) {
-          $parent.append(createAttachmentLink(page.topic))
+        if (page.object.id !== -1) {
+          $parent.append(createAttachmentLink(page.object))
         }
       })
     },
@@ -119,8 +119,8 @@
         topic_renderer = dm4c.get_page_renderer('dm4.webclient.topic_renderer')
 
       $.each(pages, function (p, page) {
-        if (page.topic.id !== -1) {
-          var attachment = page.topic,
+        if (page.object.id !== -1) {
+          var attachment = page.object,
             $attachment = createAttachmentLink(attachment, attachments)
           $attachment.addClass('level1').append(createRemoveButton(attachment, attachments))
           attachments.push(attachment)

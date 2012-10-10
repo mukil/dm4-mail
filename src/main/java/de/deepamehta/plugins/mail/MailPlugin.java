@@ -523,7 +523,7 @@ public class MailPlugin extends PluginActivator implements MailService,//
     private void associateDefaultSender(Topic mail, ClientState clientState) {
         // get user account specific sender
         Topic creator = TopicUtils.getParentTopic(acService.getCreator(mail), USER_ACCOUNT);
-        RelatedTopic sender = getSender(creator, false, clientState);
+        RelatedTopic sender = getSender(creator, true, clientState);
         if (sender == null) { // get the configured default sender instead
             sender = config.getDefaultSender();
         }
