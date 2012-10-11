@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import javax.mail.internet.AddressException;
 import javax.mail.internet.InternetAddress;
 
 import de.deepamehta.core.DeepaMehtaTransaction;
@@ -38,37 +39,78 @@ public class Mail {
         this.topic = dms.getTopic(topicId, true, clientState);
     }
 
-    public String getBody() {
-        return topic.getCompositeValue().getTopic(BODY).getSimpleValue().toString()
-                + topic.getCompositeValue().getTopics(SIGNATURE).get(0).getCompositeValue()
-                        .getTopic(BODY).getSimpleValue().toString();
+    public String getBody() throws Exception {
+        String body = topic.getCompositeValue().getTopic(BODY).getSimpleValue().toString();
+        if (body.isEmpty()) {
+            throw new IllegalArgumentException("Body of mail is empty");
+        }
+        String signature = topic.getCompositeValue().getTopics(SIGNATURE).get(0) // first
+                .getCompositeValue().getTopic(BODY).getSimpleValue().toString();
+        if (signature.isEmpty()) {
+            throw new IllegalArgumentException("Signature of mail is empty");
+        }
+        return body + signature;
     }
 
-    public Map<RecipientType, List<InternetAddress>> getRecipients()
-            throws UnsupportedEncodingException {
+    public Map<RecipientType, List<InternetAddress>> getRecipients() throws InvalidRecipients {
+        Set<String> invalid = new HashSet<String>();
         RecipientsByType results = new RecipientsByType();
         for (RelatedTopic recipient : topic.getRelatedTopics(RECIPIENT,//
                 WHOLE, PART, null, false, true, 0, null)) {
             String personal = recipient.getSimpleValue().toString();
             CompositeValue assocComposite = recipient.getAssociation().getCompositeValue();
-            String typeUri = assocComposite.getTopic(RECIPIENT_TYPE).getUri();
-            for (TopicModel email : assocComposite.getTopics(EMAIL_ADDRESS)) {
-                results.add(typeUri, email.getSimpleValue().toString(), personal);
+            TopicModel type;
+            try { // throws runtime access
+                type = assocComposite.getTopic(RECIPIENT_TYPE);
+            } catch (Exception e) {
+                invalid.add("Recipient type of \"" + personal + "\" is not defined");
+                continue;
             }
+            List<TopicModel> addresses;
+            try { // throws runtime access
+                addresses = assocComposite.getTopics(EMAIL_ADDRESS);
+                if (addresses.isEmpty()) { // caught immediately
+                    throw new RuntimeException("no address");
+                }
+            } catch (Exception e) {
+                invalid.add("Recipient \"" + personal + "\" has no email address");
+                continue;
+            }
+            String typeUri = type.getUri();
+            for (TopicModel email : addresses) {
+                String address = email.getSimpleValue().toString();
+                try {
+                    results.add(typeUri, address, personal);
+                } catch (Exception e) {
+                    invalid.add("Address \"" + address + "\" of recipient \"" + //
+                            personal + "\" is invalid");
+                }
+            }
+        }
+        if (invalid.isEmpty() == false) {
+            throw new InvalidRecipients(invalid);
         }
         return results;
     }
 
-    public InternetAddress getSender() throws UnsupportedEncodingException {
+    public InternetAddress getSender() throws UnsupportedEncodingException, AddressException {
         RelatedTopic sender = topic.getRelatedTopic(SENDER,//
                 WHOLE, PART, null, false, true, null);
         if (sender == null) {
-            throw new IllegalArgumentException("sender address required");
+            throw new IllegalArgumentException("Contact required");
         }
         String personal = sender.getSimpleValue().toString();
-        String address = sender.getAssociation().getCompositeValue()//
-                .getTopic(EMAIL_ADDRESS).getSimpleValue().toString();
-        return new InternetAddress(address, personal);
+        String address;
+        try { // throws runtime access
+
+            address = sender.getAssociation().getCompositeValue()//
+                    .getTopic(EMAIL_ADDRESS).getSimpleValue().toString();
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Contact has no email address");
+        }
+        InternetAddress internetAddress = new InternetAddress(address, personal);
+        internetAddress.validate();
+        return internetAddress;
     }
 
     public String getSubject() {
@@ -79,9 +121,10 @@ public class Mail {
         return topic;
     }
 
-    public Topic setDate(Date date) {
+    public Topic setMessageId(String messageId) {
         DeepaMehtaTransaction tx = dms.beginTx();
-        topic.setChildTopicValue(DATE, new SimpleValue(date.toString()));
+        topic.setChildTopicValue(DATE, new SimpleValue(new Date().toString()));
+        topic.setChildTopicValue(MESSAGE_ID, new SimpleValue(messageId));
         tx.success();
         tx.finish();
         return topic;

@@ -27,13 +27,44 @@ dm4c.add_plugin('dm4.mail.plugin', function () {
     sendMail()
   }
 
+  function showStatusReport(status) {
+    var $message = $('<span>').text(status.message),
+      dialogConfiguration = {
+        id: 'mailStatusReport',
+        title: 'Status Report',
+        content: $('<div>').append($message)
+      }
+    if (status.success) {
+      $message.addClass('success')
+      dialogConfiguration.button_label = 'Ok'
+      dialogConfiguration.button_handler = closeAfterSuccess
+    } else {
+      $message.addClass('error')
+      var $errors = $('<ul>')
+      $.each(status.errors, function (e, error) {
+        var $topics = $('<ul>')
+        $.each(error.topics, function (t, topic) {
+          $topics.append($('<li>').text(topic))
+        })
+        $errors.append($('<li>').append($('<span>').text(error.message)).append($topics))
+      })
+      dialogConfiguration.content.append($errors)
+    }
+
+    var dialog = dm4c.ui.dialog(dialogConfiguration)
+    dialog.open()
+    function closeAfterSuccess() {
+      dm4c.do_select_topic(status.topic_id) // show mail with sent date and ID
+      dialog.close(217)
+    }
+  }
+
   function sendMail() {
     var pluginResults = dm4c.fire_event('send_mail')
     if ($.isEmptyObject(pluginResults)) { // send it
-      var mail = dm4c.restc.request('POST', 'mail/' + dm4c.selected_object.id + '/send')
-      dm4c.show_topic(new Topic(mail), 'show', null, true)
+      showStatusReport(dm4c.restc.request('POST', 'mail/' + dm4c.selected_object.id + '/send'))
     } else { // plugin sends it before
-      dm4c.show_topic(new Topic(pluginResults[0]), 'show', null, true)
+      showStatusReport(pluginResults[0])
     }
   }
 

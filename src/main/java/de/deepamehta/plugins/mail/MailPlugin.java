@@ -3,14 +3,12 @@ package de.deepamehta.plugins.mail;
 import static de.deepamehta.plugins.mail.TopicUtils.*;
 
 import java.io.File;
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.util.Collection;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.mail.internet.InternetAddress;
@@ -77,6 +75,8 @@ public class MailPlugin extends PluginActivator implements MailService,//
     public static final String FROM = "dm4.mail.from";
 
     public static final String MAIL = "dm4.mail";
+
+    public static final String MESSAGE_ID = "dm4.mail.id";
 
     public static final String RECIPIENT = "dm4.mail.recipient";
 
@@ -246,7 +246,8 @@ public class MailPlugin extends PluginActivator implements MailService,//
         DeepaMehtaTransaction tx = dms.beginTx();
         try {
             Topic mail = dms.getTopic(mailId, true, cookie);
-            TopicModel model = new TopicModel(MAIL, mail.getCompositeValue().put(DATE, ""));
+            TopicModel model = new TopicModel(MAIL, mail.getCompositeValue()//
+                    .put(DATE, "").put(MESSAGE_ID, "")); // nullify date and ID
             Topic clone = dms.createTopic(model, cookie);
 
             // copy signature
@@ -390,7 +391,9 @@ public class MailPlugin extends PluginActivator implements MailService,//
      */
     @POST
     @Path("/{mail}/send")
-    public Topic send(@PathParam("mail") long mailId, @HeaderParam("Cookie") ClientState cookie) {
+    public StatusReport send(//
+            @PathParam("mail") long mailId,//
+            @HeaderParam("Cookie") ClientState cookie) {
         log.info("send mail " + mailId);
         try {
             return send(new Mail(mailId, dms, cookie));
@@ -400,47 +403,85 @@ public class MailPlugin extends PluginActivator implements MailService,//
     }
 
     @Override
-    public Topic send(Mail mail) throws UnsupportedEncodingException, EmailException, IOException {
-        InternetAddress sender = mail.getSender();
-        HtmlEmail email = new HtmlEmail();
-        email.setHostName(config.getSmtpHost());
-        email.setFrom(sender.getAddress(), sender.getPersonal());
-        email.setSubject(mail.getSubject());
+    public StatusReport send(Mail mail) {
+        StatusReport statusReport = new StatusReport(mail.getTopic());
 
-        Document body = cidEmbedment.embedImages(email, mail.getBody());
-        String text = body.text();
-        if (text.isEmpty()) {
-            throw new IllegalArgumentException("empty message");
+        HtmlEmail email = new HtmlEmail();
+        // email.setDebug(true);
+        email.setHostName(config.getSmtpHost());
+
+        try {
+            InternetAddress sender = mail.getSender();
+            email.setFrom(sender.getAddress(), sender.getPersonal());
+        } catch (Exception e) {
+            reportException(statusReport, Level.INFO, MailError.SENDER, e);
         }
-        email.setTextMsg(text);
-        email.setHtmlMsg(body.html());
+
+        try {
+            String subject = mail.getSubject();
+            if (subject.isEmpty()) { // caught immediately
+                throw new IllegalArgumentException("Subject of mail is empty");
+            }
+            email.setSubject(subject);
+        } catch (Exception e) {
+            reportException(statusReport, Level.INFO, MailError.CONTENT, e);
+        }
+
+        try {
+            Document body = cidEmbedment.embedImages(email, mail.getBody());
+            String text = body.text();
+            if (text.isEmpty()) { // caught immediately
+                throw new IllegalArgumentException("Text body of mail is empty");
+            }
+            email.setTextMsg(text);
+            email.setHtmlMsg(body.html());
+        } catch (Exception e) {
+            reportException(statusReport, Level.INFO, MailError.CONTENT, e);
+        }
 
         for (Long fileId : mail.getAttachmentIds()) {
-            String path = fileService.getFile(fileId).getAbsolutePath();
-            EmailAttachment attachment = new EmailAttachment();
-            attachment.setPath(path);
-            log.fine("attach " + path);
-            email.attach(attachment);
-        }
-
-        Map<RecipientType, List<InternetAddress>> recipients = mail.getRecipients();
-        for (RecipientType type : recipients.keySet()) {
-            switch (type) {
-            case BCC:
-                email.setBcc(recipients.get(type));
-                break;
-            case CC:
-                email.setCc(recipients.get(type));
-                break;
-            case TO:
-                email.setTo(recipients.get(type));
-                break;
-            default:
-                throw new IllegalArgumentException("unsupported recipient type " + type);
+            try {
+                String path = fileService.getFile(fileId).getAbsolutePath();
+                EmailAttachment attachment = new EmailAttachment();
+                attachment.setPath(path);
+                log.fine("attach " + path);
+                email.attach(attachment);
+            } catch (Exception e) {
+                reportException(statusReport, Level.INFO, MailError.ATTACHMENTS, e);
             }
         }
-        email.send();
-        return mail.setDate(new Date());
+
+        Map<RecipientType, List<InternetAddress>> recipients = new HashMap<RecipientType, List<InternetAddress>>();
+        try {
+            recipients = mail.getRecipients();
+            try {
+                mapRecipients(email, recipients);
+            } catch (Exception e) {
+                reportException(statusReport, Level.SEVERE, MailError.RECIPIENT_TYPE, e);
+            }
+        } catch (InvalidRecipients e) {
+            log.log(Level.INFO, MailError.RECIPIENTS.getMessage(), e);
+            for (String recipient : e.getRecipients()) {
+                statusReport.addError(MailError.RECIPIENTS, recipient);
+            }
+        }
+
+        if (statusReport.hasErrors()) {
+            statusReport.setMessage("Mail can NOT be send");
+        } else { // send, update message ID and return status with attached mail
+            try {
+                String messageId = email.send();
+                statusReport.setMessage("Mail was SUCCESSFULLY sent to " + //
+                        recipients.size() + " recipients");
+                mail.setMessageId(messageId);
+            } catch (EmailException e) {
+                statusReport.setMessage("Sending mail FAILED");
+                reportException(statusReport, Level.SEVERE, MailError.SEND, e);
+            } catch (Exception e) { // error after send
+                reportException(statusReport, Level.SEVERE, MailError.UPDATE, e);
+            }
+        }
+        return statusReport;
     }
 
     /**
@@ -585,4 +626,29 @@ public class MailPlugin extends PluginActivator implements MailService,//
     private Association getSenderAssociation(long topicId, long senderId, ClientState clientState) {
         return dms.getAssociation(SENDER, topicId, senderId, WHOLE, PART, false, clientState);
     }
+
+    private void mapRecipients(HtmlEmail email, Map<RecipientType, List<InternetAddress>> recipients)
+            throws EmailException {
+        for (RecipientType type : recipients.keySet()) {
+            switch (type) {
+            case BCC:
+                email.setBcc(recipients.get(type));
+                break;
+            case CC:
+                email.setCc(recipients.get(type));
+                break;
+            case TO:
+                email.setTo(recipients.get(type));
+                break;
+            default:
+                throw new IllegalArgumentException(type.toString());
+            }
+        }
+    }
+
+    private void reportException(StatusReport report, Level level, MailError error, Exception e) {
+        log.log(level, error.getMessage(), e);
+        report.addError(error, e.getMessage());
+    }
+
 }

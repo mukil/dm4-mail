@@ -11,3 +11,10 @@
     background-color: #F2DEDE;
     color: #B94A48;
 }
+
+#mailStatusReport span.success {
+    background: url(../images/success.png) no-repeat 0 50%;
+    display: block;
+    line-height: 128px;
+    padding-left: 128px;
+}

@@ -12,6 +12,7 @@ import de.deepamehta.core.service.ClientState;
 import de.deepamehta.core.service.PluginService;
 import de.deepamehta.plugins.mail.Mail;
 import de.deepamehta.plugins.mail.RecipientType;
+import de.deepamehta.plugins.mail.StatusReport;
 
 public interface MailService extends PluginService {
 
@@ -60,6 +61,6 @@ public interface MailService extends PluginService {
      *            ID of a mail topic.
      * @return Sent mail topic.
      */
-    Topic send(Mail mail) throws UnsupportedEncodingException,
+    StatusReport send(Mail mail) throws UnsupportedEncodingException,
             EmailException, IOException;
 }

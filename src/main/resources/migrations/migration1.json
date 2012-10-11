@@ -34,6 +34,20 @@
             ]
         },
         {
+            value: "Message Id",
+            uri: "dm4.mail.id",
+            data_type_uri: "dm4.core.text",
+            index_mode_uris: ["dm4.core.fulltext"],
+            view_config_topics: [
+                {
+                    type_uri: "dm4.webclient.view_config",
+                    composite: {
+                        dm4.webclient.editable: false
+                    }
+                }
+            ]
+        },
+        {
             value: "Recipients",
             uri: "dm4.mail.recipient.list",
             data_type_uri: "dm4.core.boolean",
@@ -133,6 +147,11 @@
                 },
                 {
                     part_topic_type_uri:   "dm4.mail.date",
+                    part_cardinality_uri:  "dm4.core.one",
+                    assoc_type_uri:        "dm4.core.composition_def"
+                },
+                {
+                    part_topic_type_uri:   "dm4.mail.id",
                     part_cardinality_uri:  "dm4.core.one",
                     assoc_type_uri:        "dm4.core.composition_def"
                 },
