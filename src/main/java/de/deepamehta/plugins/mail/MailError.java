@@ -6,6 +6,7 @@ public enum MailError {
     CONTENT("Invalid content"), //
     RECIPIENT_TYPE("Unsupported recipient type"), //
     RECIPIENTS("Invalid recpients"), //
+    SEND("Sending error"), //
     SENDER("Invalid sender"), //
     UPDATE("Update error");
 
