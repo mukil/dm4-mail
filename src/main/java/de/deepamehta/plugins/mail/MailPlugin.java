@@ -41,15 +41,15 @@ import de.deepamehta.core.osgi.PluginActivator;
 import de.deepamehta.core.service.ClientState;
 import de.deepamehta.core.service.Directives;
 import de.deepamehta.core.service.PluginService;
+import de.deepamehta.core.service.accesscontrol.ACLEntry;
+import de.deepamehta.core.service.accesscontrol.AccessControlList;
+import de.deepamehta.core.service.accesscontrol.Operation;
+import de.deepamehta.core.service.accesscontrol.UserRole;
 import de.deepamehta.core.service.event.InitializePluginListener;
 import de.deepamehta.core.service.event.PluginServiceArrivedListener;
 import de.deepamehta.core.service.event.PluginServiceGoneListener;
 import de.deepamehta.core.service.event.PostCreateTopicListener;
-import de.deepamehta.plugins.accesscontrol.model.Operation;
-import de.deepamehta.plugins.accesscontrol.model.Permissions;
-import de.deepamehta.plugins.accesscontrol.model.UserRole;
 import de.deepamehta.plugins.accesscontrol.service.AccessControlService;
-import de.deepamehta.plugins.facets.service.FacetsService;
 import de.deepamehta.plugins.files.ResourceInfo;
 import de.deepamehta.plugins.files.service.FilesService;
 import de.deepamehta.plugins.mail.service.MailService;
@@ -93,8 +93,6 @@ public class MailPlugin extends PluginActivator implements MailService,//
     private static Logger log = Logger.getLogger(MailPlugin.class.getName());
 
     private AccessControlService acService;
-
-    private FacetsService facetsService;
 
     private FilesService fileService = null;
 
@@ -321,7 +319,7 @@ public class MailPlugin extends PluginActivator implements MailService,//
      */
     @GET
     @Path("/recipient/types")
-    public ResultSet<Topic> getRecipientTypes() {
+    public ResultSet<RelatedTopic> getRecipientTypes() {
         try {
             return config.getRecipientTypes();
         } catch (Exception e) {
@@ -407,7 +405,7 @@ public class MailPlugin extends PluginActivator implements MailService,//
         StatusReport statusReport = new StatusReport(mail.getTopic());
 
         HtmlEmail email = new HtmlEmail();
-        // email.setDebug(true);
+        email.setDebug(true); // => System.out.println(SMTP communication);
         email.setHostName(config.getSmtpHost());
 
         try {
@@ -451,7 +449,7 @@ public class MailPlugin extends PluginActivator implements MailService,//
             }
         }
 
-        Map<RecipientType, List<InternetAddress>> recipients = new HashMap<RecipientType, List<InternetAddress>>();
+        RecipientsByType recipients = new RecipientsByType();
         try {
             recipients = mail.getRecipients();
             try {
@@ -472,7 +470,7 @@ public class MailPlugin extends PluginActivator implements MailService,//
             try {
                 String messageId = email.send();
                 statusReport.setMessage("Mail was SUCCESSFULLY sent to " + //
-                        recipients.size() + " recipients");
+                        recipients.getCount() + " recipients");
                 mail.setMessageId(messageId);
             } catch (EmailException e) {
                 statusReport.setMessage("Sending mail FAILED");
@@ -502,14 +500,12 @@ public class MailPlugin extends PluginActivator implements MailService,//
             fileService = (FilesService) service;
         } else if (service instanceof AccessControlService) {
             acService = (AccessControlService) service;
-        } else if (service instanceof FacetsService) {
-            facetsService = (FacetsService) service;
         }
         configureIfReady();
     }
 
     private void configureIfReady() {
-        if (isInitialized && acService != null && facetsService != null && fileService != null) {
+        if (isInitialized && acService != null && fileService != null) {
             createAttachmentDirectory();
             checkACLsOfMigration();
             cidEmbedment = new ImageCidEmbedment(dms, fileService);
@@ -527,13 +523,14 @@ public class MailPlugin extends PluginActivator implements MailService,//
 
     private void checkACLsOfMigration() {
         Topic config = dms.getTopic("uri", new SimpleValue("dm4.mail.config"), false, null);
-        if (acService.getCreator(config) == null) {
+        if (acService.getCreator(config.getId()) == null) {
             log.info("initial ACL update of configuration");
             Topic admin = acService.getUsername("admin");
-            acService.setCreator(config, admin.getId());
-            acService.setOwner(config, admin.getId());
-            acService.createACLEntry(config, UserRole.OWNER,//
-                    new Permissions().add(Operation.WRITE, true));
+            String adminName = admin.getSimpleValue().toString();
+            acService.setCreator(config.getId(), adminName);
+            acService.setOwner(config.getId(), adminName);
+            acService.createACL(config.getId(), new AccessControlList( //
+                    new ACLEntry(Operation.WRITE, UserRole.OWNER)));
         }
     }
 
@@ -563,8 +560,17 @@ public class MailPlugin extends PluginActivator implements MailService,//
 
     private void associateDefaultSender(Topic mail, ClientState clientState) {
         // get user account specific sender
-        Topic creator = TopicUtils.getParentTopic(acService.getCreator(mail), USER_ACCOUNT);
-        RelatedTopic sender = getSender(creator, true, clientState);
+        Topic creatorName = acService.getUsername(acService.getCreator(mail.getId()));
+        Topic creator = null;
+        RelatedTopic sender = null;
+
+        if (creatorName != null) {
+            creator = TopicUtils.getParentTopic(creatorName, USER_ACCOUNT);
+        }
+        if (creator != null) {
+            sender = getSender(creator, true, clientState);
+        }
+
         if (sender == null) { // get the configured default sender instead
             sender = config.getDefaultSender();
         }
@@ -648,7 +654,11 @@ public class MailPlugin extends PluginActivator implements MailService,//
 
     private void reportException(StatusReport report, Level level, MailError error, Exception e) {
         log.log(level, error.getMessage(), e);
-        report.addError(error, e.getMessage());
+        String message = e.getMessage();
+        Throwable cause = e.getCause();
+        if (cause != null) {
+            message += ": " + cause.getMessage();
+        }
+        report.addError(error, message);
     }
-
 }

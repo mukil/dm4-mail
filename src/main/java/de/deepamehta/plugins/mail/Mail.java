@@ -7,7 +7,6 @@ import java.io.UnsupportedEncodingException;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import javax.mail.internet.AddressException;
@@ -52,7 +51,7 @@ public class Mail {
         return body + signature;
     }
 
-    public Map<RecipientType, List<InternetAddress>> getRecipients() throws InvalidRecipients {
+    public RecipientsByType getRecipients() throws InvalidRecipients {
         Set<String> invalid = new HashSet<String>();
         RecipientsByType results = new RecipientsByType();
         for (RelatedTopic recipient : topic.getRelatedTopics(RECIPIENT,//

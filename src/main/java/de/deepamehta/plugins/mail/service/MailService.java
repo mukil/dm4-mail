@@ -61,6 +61,5 @@ public interface MailService extends PluginService {
      *            ID of a mail topic.
      * @return Sent mail topic.
      */
-    StatusReport send(Mail mail) throws UnsupportedEncodingException,
-            EmailException, IOException;
+    StatusReport send(Mail mail) throws UnsupportedEncodingException, EmailException, IOException;
 }

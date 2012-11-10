@@ -14,11 +14,14 @@ import javax.mail.internet.InternetAddress;
 @SuppressWarnings("serial")
 class RecipientsByType extends HashMap<RecipientType, List<InternetAddress>> {
 
+    private Integer count = 0;
+
     public void add(String typeUri, String address, String personal)
             throws UnsupportedEncodingException, AddressException {
         InternetAddress internetAddress = new InternetAddress(address, personal);
         internetAddress.validate();
         getTypeList(RecipientType.fromUri(typeUri)).add(internetAddress);
+        count++;
     }
 
     private List<InternetAddress> getTypeList(RecipientType type) {
@@ -26,5 +29,9 @@ class RecipientsByType extends HashMap<RecipientType, List<InternetAddress>> {
             put(type, new ArrayList<InternetAddress>());
         }
         return get(type);
+    }
+
+    public Integer getCount() {
+        return count;
     }
 }

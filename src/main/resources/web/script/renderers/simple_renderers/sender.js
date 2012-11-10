@@ -15,7 +15,7 @@
   }
 
   function changeSender(topicId, senderId) {
-    return dm4c.restc.request('POST', 'mail/' + topicId + '/sender/' + senderId)
+    return dm4c.restc.request('POST', '/mail/' + topicId + '/sender/' + senderId)
   }
 
   function updateSenderView($topic, sender, association) {

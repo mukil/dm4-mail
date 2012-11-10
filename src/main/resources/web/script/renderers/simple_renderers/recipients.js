@@ -20,11 +20,11 @@
   }
 
   function getRecipientTypes() {
-    return dm4c.restc.request('GET', 'mail/recipient/types').items
+    return dm4c.restc.request('GET', '/mail/recipient/types').items
   }
 
   function associate(mailId, recipientId) {
-    return dm4c.restc.request('POST', 'mail/' + mailId + '/recipient/' + recipientId)
+    return dm4c.restc.request('POST', '/mail/' + mailId + '/recipient/' + recipientId)
   }
 
   // --- callbacks ---------------------------------------------------

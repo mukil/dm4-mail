@@ -41,7 +41,7 @@ public class MailConfigurationCache {
 
     private final DeepaMehtaService dms;
 
-    private ResultSet<Topic> recipientTypes;
+    private ResultSet<RelatedTopic> recipientTypes;
 
     private Set<String> recipientTypeUris;
 
@@ -112,7 +112,7 @@ public class MailConfigurationCache {
         return revealSearchParentTypes().get(uri);
     }
 
-    public ResultSet<Topic> getRecipientTypes() {
+    public ResultSet<RelatedTopic> getRecipientTypes() {
         if (recipientTypes == null) {
             log.info("reveal recipient types");
             recipientTypes = dms.getTopics(RECIPIENT_TYPE, false, 0, null);
