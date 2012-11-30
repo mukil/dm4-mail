@@ -45,9 +45,7 @@ import de.deepamehta.core.service.accesscontrol.ACLEntry;
 import de.deepamehta.core.service.accesscontrol.AccessControlList;
 import de.deepamehta.core.service.accesscontrol.Operation;
 import de.deepamehta.core.service.accesscontrol.UserRole;
-import de.deepamehta.core.service.event.InitializePluginListener;
-import de.deepamehta.core.service.event.PluginServiceArrivedListener;
-import de.deepamehta.core.service.event.PluginServiceGoneListener;
+import de.deepamehta.core.service.annotation.ConsumesService;
 import de.deepamehta.core.service.event.PostCreateTopicListener;
 import de.deepamehta.plugins.accesscontrol.service.AccessControlService;
 import de.deepamehta.plugins.files.ResourceInfo;
@@ -56,11 +54,7 @@ import de.deepamehta.plugins.mail.service.MailService;
 
 @Path("/mail")
 @Produces(MediaType.APPLICATION_JSON)
-public class MailPlugin extends PluginActivator implements MailService,//
-        InitializePluginListener,//
-        PostCreateTopicListener,//
-        PluginServiceArrivedListener,//
-        PluginServiceGoneListener {
+public class MailPlugin extends PluginActivator implements MailService, PostCreateTopicListener {
 
     public static final String ATTACHMENTS = "attachments";
 
@@ -182,11 +176,19 @@ public class MailPlugin extends PluginActivator implements MailService,//
             return associateSender(mailId, sender, value, clientState);
         } else { // update or delete the old sender
             Association association = getSenderAssociation(mailId, oldSender.getId(), clientState);
-            if (sender.getId() != oldSender.getId()) { // delete the old one
-                dms.deleteAssociation(association.getId(), clientState);
-                association = associateSender(mailId, sender, value, clientState);
-            } else { // update composite
-                association.setCompositeValue(value, clientState, new Directives());
+            DeepaMehtaTransaction tx = dms.beginTx();
+            try {
+                if (sender.getId() != oldSender.getId()) { // delete the old one
+                    dms.deleteAssociation(association.getId(), clientState);
+                    association = associateSender(mailId, sender, value, clientState);
+                } else { // update composite
+                    association.setCompositeValue(value, clientState, new Directives());
+                }
+                tx.success();
+            } catch (Exception e) {
+                throw new WebApplicationException(e);
+            } finally {
+                tx.finish();
             }
             return association;
         }
@@ -288,6 +290,7 @@ public class MailPlugin extends PluginActivator implements MailService,//
     public Topic writeTo(@PathParam("recipient") long recipientId,
             @HeaderParam("Cookie") ClientState cookie) {
         log.info("write a mail to recipient " + recipientId);
+        DeepaMehtaTransaction tx = dms.beginTx();
         try {
             Topic mail = dms.createTopic(new TopicModel(MAIL), cookie);
             associateRecipient(//
@@ -295,9 +298,12 @@ public class MailPlugin extends PluginActivator implements MailService,//
                     dms.getTopic(recipientId, true, cookie),//
                     config.getDefaultRecipientType(),//
                     cookie);
+            tx.success();
             return mail;
         } catch (Exception e) {
             throw new WebApplicationException(e);
+        } finally {
+            tx.finish();
         }
     }
 
@@ -369,16 +375,12 @@ public class MailPlugin extends PluginActivator implements MailService,//
     @Override
     public void postCreateTopic(Topic topic, ClientState clientState, Directives directives) {
         if (topic.getTypeUri().equals(MAIL)) {
-            try {
+            if (topic.getCompositeValue().has(FROM) == false) { // new mail
+                associateDefaultSender(topic, clientState);
+            } else { // copied mail
                 TopicModel from = topic.getCompositeValue().getTopic(FROM);
-                if (from.getSimpleValue().booleanValue() == false) {
+                if (from.getSimpleValue().booleanValue() == false) { // sender?
                     associateDefaultSender(topic, clientState);
-                }
-            } catch (RuntimeException e) { // TODO use specific exception
-                if (e.getMessage().contains("Invalid access to CompositeValue entry")) {
-                    associateDefaultSender(topic, clientState);
-                } else {
-                    throw e;
                 }
             }
         }
@@ -465,7 +467,7 @@ public class MailPlugin extends PluginActivator implements MailService,//
         }
 
         if (statusReport.hasErrors()) {
-            statusReport.setMessage("Mail can NOT be send");
+            statusReport.setMessage("Mail can NOT be sent");
         } else { // send, update message ID and return status with attached mail
             try {
                 String messageId = email.send();
@@ -486,7 +488,7 @@ public class MailPlugin extends PluginActivator implements MailService,//
      * Initialize configuration cache.
      */
     @Override
-    public void initializePlugin() {
+    public void init() {
         isInitialized = true;
         configureIfReady();
     }
@@ -495,11 +497,14 @@ public class MailPlugin extends PluginActivator implements MailService,//
      * Reference file service and create the attachment directory if not exists.
      */
     @Override
-    public void pluginServiceArrived(PluginService service) {
-        if (service instanceof FilesService) {
-            fileService = (FilesService) service;
-        } else if (service instanceof AccessControlService) {
+    @ConsumesService({ "de.deepamehta.plugins.accesscontrol.service.AccessControlService",
+            "de.deepamehta.plugins.files.service.FilesService" })
+    public void serviceArrived(PluginService service) {
+        if (service instanceof AccessControlService) {
             acService = (AccessControlService) service;
+        } else if (service instanceof FilesService) {
+            fileService = (FilesService) service;
+            cidEmbedment = new ImageCidEmbedment(fileService);
         }
         configureIfReady();
     }
@@ -508,14 +513,15 @@ public class MailPlugin extends PluginActivator implements MailService,//
         if (isInitialized && acService != null && fileService != null) {
             createAttachmentDirectory();
             checkACLsOfMigration();
-            cidEmbedment = new ImageCidEmbedment(dms, fileService);
             loadConfiguration();
         }
     }
 
     @Override
-    public void pluginServiceGone(PluginService service) {
-        if (service == fileService) {
+    public void serviceGone(PluginService service) {
+        if (service == acService) {
+            acService = null;
+        } else if (service == fileService) {
             fileService = null;
             cidEmbedment = null;
         }
@@ -559,27 +565,37 @@ public class MailPlugin extends PluginActivator implements MailService,//
     }
 
     private void associateDefaultSender(Topic mail, ClientState clientState) {
-        // get user account specific sender
-        Topic creatorName = acService.getUsername(acService.getCreator(mail.getId()));
         Topic creator = null;
         RelatedTopic sender = null;
 
+        Topic creatorName = acService.getUsername(acService.getCreator(mail.getId()));
         if (creatorName != null) {
             creator = TopicUtils.getParentTopic(creatorName, USER_ACCOUNT);
         }
+
+        // get user account specific sender
         if (creator != null) {
             sender = getSender(creator, true, clientState);
         }
 
-        if (sender == null) { // get the configured default sender instead
+        // get the configured default sender instead
+        if (sender == null) {
             sender = config.getDefaultSender();
         }
 
         if (sender != null) {
-            associateSender(mail.getId(), sender,//
-                    sender.getAssociation().getCompositeValue(), clientState);
-            RelatedTopic signature = getContactSignature(sender, clientState);
-            associateSignature(mail.getId(), signature.getId(), clientState);
+            DeepaMehtaTransaction tx = dms.beginTx();
+            try {
+                associateSender(mail.getId(), sender,//
+                        sender.getAssociation().getCompositeValue(), clientState);
+                RelatedTopic signature = getContactSignature(sender, clientState);
+                if (signature != null) {
+                    associateSignature(mail.getId(), signature.getId(), clientState);
+                }
+                tx.success();
+            } finally {
+                tx.finish();
+            }
         }
     }
 

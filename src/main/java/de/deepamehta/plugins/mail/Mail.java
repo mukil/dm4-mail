@@ -43,12 +43,22 @@ public class Mail {
         if (body.isEmpty()) {
             throw new IllegalArgumentException("Body of mail is empty");
         }
-        String signature = topic.getCompositeValue().getTopics(SIGNATURE).get(0) // first
-                .getCompositeValue().getTopic(BODY).getSimpleValue().toString();
-        if (signature.isEmpty()) {
-            throw new IllegalArgumentException("Signature of mail is empty");
+
+        if (topic.getCompositeValue().has(SIGNATURE) == false) {
+            throw new IllegalArgumentException("Signature of mail not found");
+        } else {
+            List<TopicModel> signature = topic.getCompositeValue().getTopics(SIGNATURE);
+            CompositeValue value = signature.get(0).getCompositeValue();
+            if (value.has(BODY) == false) {
+                throw new IllegalArgumentException("Signature of mail is empty");
+            } else {
+                String sigBody = value.getTopic(BODY).getSimpleValue().toString();
+                if (sigBody.isEmpty()) {
+                    throw new IllegalArgumentException("Signature of mail is empty");
+                }
+                return body + sigBody;
+            }
         }
-        return body + signature;
     }
 
     public RecipientsByType getRecipients() throws InvalidRecipients {

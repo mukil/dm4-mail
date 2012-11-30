@@ -28,29 +28,29 @@
                 {
                     assoc_type_uri:        "dm4.core.composition_def",
                     part_cardinality_uri:  "dm4.core.one",
-                    part_topic_type_uri:   "dm4.mail.config.name"
+                    part_type_uri:   "dm4.mail.config.name"
                 },
                 {
                     assoc_type_uri:        "dm4.core.composition_def",
                     part_cardinality_uri:  "dm4.core.one",
-                    part_topic_type_uri:   "dm4.mail.config.host"
+                    part_type_uri:   "dm4.mail.config.host"
                 },
                 {
                     assoc_type_uri:        "dm4.core.composition_def",
                     part_cardinality_uri:  "dm4.core.one",
-                    part_topic_type_uri:   "dm4.mail.from"
+                    part_type_uri:   "dm4.mail.from"
                 },
                 { # default recipient type
                     assoc_type_uri:        "dm4.core.aggregation_def",
                     whole_cardinality_uri: "dm4.core.one",
                     part_cardinality_uri:  "dm4.core.one",
-                    part_topic_type_uri:   "dm4.mail.recipient.type"
+                    part_type_uri:   "dm4.mail.recipient.type"
                 },
                 { # auto-completion search types, should be indexed and the
                   # parent of each aggregation needs at least one dm4.contacts.email_address
                   # !!! aggregate composite list works at this level
                   # !!! webclient edit works too directly after running the migration
-                    part_topic_type_uri:   "dm4.core.topic_type",
+                    part_type_uri:   "dm4.core.topic_type",
                     part_cardinality_uri:  "dm4.core.many",
                     whole_cardinality_uri: "dm4.core.many",
                     assoc_type_uri:        "dm4.core.aggregation_def"

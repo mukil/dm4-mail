@@ -64,6 +64,7 @@
   function createRecipientEditor(mailId, recipient, $types) {
     function click(event) {
       event.preventDefault()
+      dm4c.page_panel.save()
       dm4c.do_reveal_related_topic(recipient.id)
     }
 
