@@ -65,7 +65,7 @@
     function click(event) {
       event.preventDefault()
       dm4c.page_panel.save()
-      dm4c.do_reveal_related_topic(recipient.id)
+      dm4c.do_reveal_related_topic(recipient.id, 'show')
     }
 
     var association = getRecipientAssociation(mailId, recipient.id),

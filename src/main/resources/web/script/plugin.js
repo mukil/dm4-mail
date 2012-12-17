@@ -74,7 +74,7 @@ dm4c.add_plugin('dm4.mail.plugin', function () {
   function writeMail() {
     var mail = dm4c.restc.request('POST', '/mail/write/' + dm4c.selected_object.id)
     // TODO render recipient association
-    dm4c.do_reveal_related_topic(mail.id)
+    dm4c.do_reveal_related_topic(mail.id, 'show')
     dm4c.show_topic(new Topic(mail), 'edit', null, true)
   }
 

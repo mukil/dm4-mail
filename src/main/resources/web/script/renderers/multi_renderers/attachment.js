@@ -51,7 +51,7 @@
   function createAttachmentLink(file) {
     function click(event) {
       event.preventDefault()
-      dm4c.do_reveal_related_topic(file.id)
+      dm4c.do_reveal_related_topic(file.id, 'show')
     }
 
     var $icon = dm4c.render.icon_link(file, click),

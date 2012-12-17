@@ -22,7 +22,7 @@
     function click(event) {
       event.preventDefault()
       dm4c.page_panel.save()
-      dm4c.do_reveal_related_topic(sender.id)
+      dm4c.do_reveal_related_topic(sender.id, 'show')
     }
 
     var email = association.composite['dm4.contacts.email_address'],

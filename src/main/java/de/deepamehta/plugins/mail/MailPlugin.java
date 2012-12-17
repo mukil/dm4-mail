@@ -485,7 +485,7 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
     }
 
     /**
-     * Initialize configuration cache.
+     * Initialize.
      */
     @Override
     public void init() {
