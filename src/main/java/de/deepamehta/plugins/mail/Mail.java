@@ -12,7 +12,6 @@ import java.util.Set;
 import javax.mail.internet.AddressException;
 import javax.mail.internet.InternetAddress;
 
-import de.deepamehta.core.DeepaMehtaTransaction;
 import de.deepamehta.core.RelatedTopic;
 import de.deepamehta.core.Topic;
 import de.deepamehta.core.model.CompositeValue;
@@ -20,6 +19,7 @@ import de.deepamehta.core.model.SimpleValue;
 import de.deepamehta.core.model.TopicModel;
 import de.deepamehta.core.service.ClientState;
 import de.deepamehta.core.service.DeepaMehtaService;
+import de.deepamehta.core.storage.spi.DeepaMehtaTransaction;
 
 /**
  * Model class that wraps the mail composite access.
@@ -67,7 +67,7 @@ public class Mail {
         for (RelatedTopic recipient : topic.getRelatedTopics(RECIPIENT,//
                 WHOLE, PART, null, false, true, 0, null)) {
             String personal = recipient.getSimpleValue().toString();
-            CompositeValue assocComposite = recipient.getAssociation().getCompositeValue();
+            CompositeValue assocComposite = recipient.getRelatingAssociation().getCompositeValue();
             TopicModel type;
             try { // throws runtime access
                 type = assocComposite.getTopic(RECIPIENT_TYPE);
@@ -112,7 +112,7 @@ public class Mail {
         String address;
         try { // throws runtime access
 
-            address = sender.getAssociation().getCompositeValue()//
+            address = sender.getRelatingAssociation().getCompositeValue()//
                     .getTopic(EMAIL_ADDRESS).getSimpleValue().toString();
         } catch (Exception e) {
             throw new IllegalArgumentException("Contact has no email address");

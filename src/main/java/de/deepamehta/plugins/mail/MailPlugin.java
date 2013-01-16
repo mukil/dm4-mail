@@ -28,7 +28,6 @@ import org.apache.commons.mail.HtmlEmail;
 import org.jsoup.nodes.Document;
 
 import de.deepamehta.core.Association;
-import de.deepamehta.core.DeepaMehtaTransaction;
 import de.deepamehta.core.RelatedTopic;
 import de.deepamehta.core.ResultSet;
 import de.deepamehta.core.Topic;
@@ -47,6 +46,7 @@ import de.deepamehta.core.service.accesscontrol.Operation;
 import de.deepamehta.core.service.accesscontrol.UserRole;
 import de.deepamehta.core.service.annotation.ConsumesService;
 import de.deepamehta.core.service.event.PostCreateTopicListener;
+import de.deepamehta.core.storage.spi.DeepaMehtaTransaction;
 import de.deepamehta.plugins.accesscontrol.service.AccessControlService;
 import de.deepamehta.plugins.files.ResourceInfo;
 import de.deepamehta.plugins.files.service.FilesService;
@@ -257,14 +257,14 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
             // copy sender association
             RelatedTopic sender = getSender(mail, true, cookie);
             associateSender(clone.getId(), sender,//
-                    sender.getAssociation().getCompositeValue(), cookie);
+                    sender.getRelatingAssociation().getCompositeValue(), cookie);
 
             // copy recipient associations
             if (includeRecipients) {
                 for (RelatedTopic recipient : mail.getRelatedTopics(RECIPIENT,//
                         WHOLE, PART, null, false, true, 0, null)) {
                     associateRecipient(clone.getId(), recipient,//
-                            recipient.getAssociation().getCompositeValue(), cookie);
+                            recipient.getRelatingAssociation().getCompositeValue(), cookie);
                 }
             }
             tx.success();
@@ -587,7 +587,7 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
             DeepaMehtaTransaction tx = dms.beginTx();
             try {
                 associateSender(mail.getId(), sender,//
-                        sender.getAssociation().getCompositeValue(), clientState);
+                        sender.getRelatingAssociation().getCompositeValue(), clientState);
                 RelatedTopic signature = getContactSignature(sender, clientState);
                 if (signature != null) {
                     associateSignature(mail.getId(), signature.getId(), clientState);
