@@ -4,7 +4,7 @@ simple Mail plugin
 
 ## Requirements
 
-  * [DeepaMehta 4](http://github.com/jri/deepamehta) > 4.0.11
+  * [DeepaMehta 4](http://github.com/jri/deepamehta) 4.1-SNAPSHOT
 
 ## Usage
 
