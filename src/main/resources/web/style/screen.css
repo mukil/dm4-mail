@@ -1,8 +1,17 @@
+
+.sender a,
+.sender span,
+.recipient img,
+.recipient a,
+.recipient span {
+    padding-left: .3em;
+}
+
 .completion {
     padding-top: 2px;
 }
 
-.completion input {
+.completion > input {
     float: left;
     width: 60%;
 }
@@ -16,5 +25,5 @@
     background: url(../images/success.png) no-repeat 0 50%;
     display: block;
     line-height: 128px;
-    padding-left: 128px;
+    padding-left: 137px;
 }
