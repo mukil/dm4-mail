@@ -49,7 +49,7 @@
 
     render_form: function (model, $parent) {
       var topic = model.toplevel_object,
-        $sender = $('<div>')
+        $sender = $('<div>').addClass('sender box level1')
 
       $.each(getSenderTopics(topic.id), function (s, sender) { // only one sender is supported
         updateSenderView($sender, sender, getSenderAssociation(topic.id, sender.id))
@@ -57,7 +57,7 @@
 
       // show time
       $parent.append($sender).append(dm4c.get_plugin('dm4.mail.plugin')
-        .createCompletionField('Change', function ($item, item) {
+        .createCompletionField('Choose', function ($item, item) {
           updateSenderView($sender, item, changeSender(topic.id, item.id))
           // TODO show but not focus the created association
         }))
