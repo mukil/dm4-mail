@@ -79,7 +79,7 @@
       $recipient.append($('<span>').text('<' + email.value + '> '))
     })
     $recipient.append($('<div>').addClass('remove-button').append($remove))
-    return $recipient.addClass('box level1').data('recipient', {
+    return $recipient.addClass('recipient box level1').data('recipient', {
       association: association,
       topic: recipient
     })
