@@ -92,7 +92,7 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
 
     private ImageCidEmbedment cidEmbedment = null;
 
-    private MailConfigurationCache config = null;
+    MailConfigurationCache config = null;
 
     private boolean isInitialized;
 
@@ -209,7 +209,7 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
             @HeaderParam("Cookie") ClientState cookie) {
         log.info("autocomplete " + term);
         try {
-            // hash parent results by ID to overwrite duplicates
+            // hash parent results by ID to overwrite duplicated matches
             Map<Long, TopicModel> results = new HashMap<Long, TopicModel>();
             for (String uri : config.getSearchTypeUris()) {
                 String parentTypeUri = config.getParentOfSearchType(uri).getUri();
@@ -226,7 +226,7 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
     }
 
     /**
-     * Creates a copy of mail.
+     * Creates a copy of the mail.
      * 
      * @param mailId
      *            ID of the mail topic to clone.
@@ -472,7 +472,7 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
             try {
                 String messageId = email.send();
                 statusReport.setMessage("Mail was SUCCESSFULLY sent to " + //
-                        recipients.getCount() + " recipients");
+                        recipients.getCount() + " mail addresses");
                 mail.setMessageId(messageId);
             } catch (EmailException e) {
                 statusReport.setMessage("Sending mail FAILED");
