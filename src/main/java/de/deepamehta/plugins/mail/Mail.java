@@ -1,7 +1,6 @@
 package de.deepamehta.plugins.mail;
 
 import static de.deepamehta.plugins.mail.MailPlugin.*;
-import static de.deepamehta.plugins.mail.TopicUtils.*;
 
 import java.io.UnsupportedEncodingException;
 import java.util.Date;
@@ -12,6 +11,7 @@ import java.util.Set;
 import javax.mail.internet.AddressException;
 import javax.mail.internet.InternetAddress;
 
+import de.deepamehta.core.Association;
 import de.deepamehta.core.RelatedTopic;
 import de.deepamehta.core.Topic;
 import de.deepamehta.core.model.CompositeValue;
@@ -64,35 +64,35 @@ public class Mail {
     public RecipientsByType getRecipients() throws InvalidRecipients {
         Set<String> invalid = new HashSet<String>();
         RecipientsByType results = new RecipientsByType();
+
         for (RelatedTopic recipient : topic.getRelatedTopics(RECIPIENT,//
-                WHOLE, PART, null, false, true, 0, null)) {
+                WHOLE, PART, null, false, false, 0, null)) {
             String personal = recipient.getSimpleValue().toString();
-            CompositeValue assocComposite = recipient.getRelatingAssociation().getCompositeValue();
-            TopicModel type;
-            try { // throws runtime access
-                type = assocComposite.getTopic(RECIPIENT_TYPE);
-            } catch (Exception e) {
-                invalid.add("Recipient type of \"" + personal + "\" is not defined");
-                continue;
-            }
-            List<TopicModel> addresses;
-            try { // throws runtime access
-                addresses = assocComposite.getTopics(EMAIL_ADDRESS);
-                if (addresses.isEmpty()) { // caught immediately
-                    throw new RuntimeException("no address");
+
+            for (Association association : dms.getAssociations(topic.getId(), recipient.getId())) {
+                if (association.getTypeUri().equals(RECIPIENT) == false) {
+                    continue; // sender or something else found
                 }
-            } catch (Exception e) {
-                invalid.add("Recipient \"" + personal + "\" has no email address");
-                continue;
-            }
-            String typeUri = type.getUri();
-            for (TopicModel email : addresses) {
-                String address = email.getSimpleValue().toString();
+
+                // get and validate recipient association
+                CompositeValue value = dms.getAssociation(association.getId(),//
+                        true, null).getCompositeValue(); // re-fetch with value
+                if (value.has(RECIPIENT_TYPE) == false) {
+                    invalid.add("Recipient type of \"" + personal + "\" is not defined.");
+                    continue;
+                }
+                if (value.has(EMAIL_ADDRESS) == false) {
+                    invalid.add("Recipient \"" + personal + "\" has no email address");
+                    continue;
+                }
+
+                TopicModel type = value.getTopic(RECIPIENT_TYPE);
+                String email = value.getTopic(EMAIL_ADDRESS).getSimpleValue().toString();
                 try {
-                    results.add(typeUri, address, personal);
+                    results.add(type.getUri(), email, personal);
                 } catch (Exception e) {
-                    invalid.add("Address \"" + address + "\" of recipient \"" + //
-                            personal + "\" is invalid");
+                    invalid.add("Email address \"" + email + "\" of recipient \"" + //
+                            personal + "\" is invalid.");
                 }
             }
         }
@@ -111,7 +111,6 @@ public class Mail {
         String personal = sender.getSimpleValue().toString();
         String address;
         try { // throws runtime access
-
             address = sender.getRelatingAssociation().getCompositeValue()//
                     .getTopic(EMAIL_ADDRESS).getSimpleValue().toString();
         } catch (Exception e) {
@@ -141,8 +140,8 @@ public class Mail {
 
     public Set<Long> getAttachmentIds() {
         Set<Long> attachments = new HashSet<Long>();
-        for (RelatedTopic attachment : topic.getRelatedTopics(TopicUtils.AGGREGATION,
-                TopicUtils.WHOLE, TopicUtils.PART, FILE, false, false, 0, clientState)) {
+        for (RelatedTopic attachment : topic.getRelatedTopics(AGGREGATION,//
+                WHOLE, PART, FILE, false, false, 0, clientState)) {
             attachments.add(attachment.getId());
         }
         return attachments;

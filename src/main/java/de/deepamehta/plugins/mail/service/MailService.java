@@ -26,33 +26,33 @@ public interface MailService extends PluginService {
     Collection<Topic> getSearchParentTypes();
 
     /**
-     * Associate mail and recipient.
+     * Update or create a mail recipient association.
      * 
      * @param mailId
      *            ID of a mail topic.
-     * @param recipient
-     *            Recipient topic with at least one email address.
+     * @param addressId
+     *            Email address of recipient.
      * @param type
      *            Recipient type URI or null to choose the configured default.
      * @param clientState
      *            Optional cookie or null.
      * @return Recipient association with email address and recipient type.
      */
-    Association associateRecipient(long mailId, Topic recipient, RecipientType type,
-            ClientState clientState);
+    Association associateRecipient(long mailId, long addressId,//
+            RecipientType type, ClientState clientState);
 
     /**
-     * Update mail sender association.
+     * Update or create a mail sender association.
      * 
      * @param topicId
      *            ID of a mail or configuration topic.
-     * @param senderId
-     *            Sender topic with at least one email address.
+     * @param addressId
+     *            Email address of sender.
      * @param clientState
      *            Optional cookie or null.
      * @return Sender association with email address.
      */
-    Association associateSender(long topicId, Topic sender, ClientState clientState);
+    Association associateSender(long topicId, long addressId, ClientState clientState);
 
     /**
      * Sends a HTML mail.

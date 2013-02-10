@@ -1,7 +1,7 @@
 dm4c.add_plugin('dm4.mail.plugin', function () {
 
   function autoComplete(term) {
-    return dm4c.restc.request('GET', '/mail/autocomplete/' + term).items
+    return dm4c.restc.request('GET', '/mail/autocomplete/' + term)
   }
 
   function getSearchableParentTypes() {
@@ -128,8 +128,8 @@ dm4c.add_plugin('dm4.mail.plugin', function () {
 
   // highlight all term occurrences in label with a <strong> element
   function highlightTerm(label, term) {
-    var h = label
-    $.each(term.split(' '), function (w, word) {
+    var h = label.trim()
+    $.each(term.trim().split(' '), function (w, word) {
       h = h.replace(new RegExp('(' + word + ')', 'gi'), '<strong>$1</strong>')
     })
     return h
@@ -159,7 +159,7 @@ dm4c.add_plugin('dm4.mail.plugin', function () {
     }
 
     $elem.autocomplete({
-      minLength: 1,
+      minLength: 2,
       source: function (request, response) {
         lastTerm = request.term
         response(autoComplete(request.term))

@@ -5,7 +5,7 @@
             value: "Body",
             uri: "dm4.mail.body",
             data_type_uri: "dm4.core.html",
-            index_mode_uris: ["dm4.core.fulltext"]
+            index_mode_uris: [ "dm4.core.fulltext" ]
         },
         {
             value: "Sent Date",
@@ -37,7 +37,7 @@
             value: "Message Id",
             uri: "dm4.mail.id",
             data_type_uri: "dm4.core.text",
-            index_mode_uris: ["dm4.core.fulltext"],
+            index_mode_uris: [ "dm4.core.fulltext" ],
             view_config_topics: [
                 {
                     type_uri: "dm4.webclient.view_config",
@@ -69,13 +69,13 @@
             value: "Subject",
             uri: "dm4.mail.subject",
             data_type_uri: "dm4.core.text",
-            index_mode_uris: ["dm4.core.fulltext"]
+            index_mode_uris: [ "dm4.core.fulltext" ]
         },
         {
             value: "Name",
             uri: "dm4.mail.signature.name",
             data_type_uri: "dm4.core.text",
-            index_mode_uris: ["dm4.core.fulltext"]
+            index_mode_uris: [ "dm4.core.fulltext" ]
         },
         {
             value: "Signature",
@@ -199,7 +199,7 @@
             data_type_uri: "dm4.core.composite",
             assoc_defs: [
                 { # actual selected email address (direct recipient child)
-                    part_type_uri:   "dm4.contacts.email_address",
+                    part_type_uri:         "dm4.contacts.email_address",
                     part_cardinality_uri:  "dm4.core.one",
                     whole_cardinality_uri: "dm4.core.one",
                     assoc_type_uri:        "dm4.core.aggregation_def"
@@ -217,9 +217,9 @@
                     whole_cardinality_uri: "dm4.core.one",
                     assoc_type_uri:        "dm4.core.aggregation_def"
                 },
-                { # actual selected email addresses (direct recipient child)
-                    part_type_uri:   "dm4.contacts.email_address",
-                    part_cardinality_uri:  "dm4.core.many",
+                { # actual selected email address (direct recipient child)
+                    part_type_uri:         "dm4.contacts.email_address",
+                    part_cardinality_uri:  "dm4.core.one",
                     whole_cardinality_uri: "dm4.core.one",
                     assoc_type_uri:        "dm4.core.aggregation_def"
                 }

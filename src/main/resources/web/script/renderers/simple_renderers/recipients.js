@@ -4,6 +4,16 @@
 
   // --- REST getter ------------------------------------------------
 
+  function getRecipient(childId, parentUri) {
+    return dm4c.restc.get_topic_related_topics(childId, {
+      assoc_type_uri: 'dm4.core.composition',
+      my_role_type_uri: 'dm4.core.part',
+      others_role_type_uri: 'dm4.core.whole',
+      others_topic_type_uri: parentUri
+    }).items[0]
+    return null
+  }
+
   function getRecipientTopics(mailId) {
     return dm4c.restc.get_topic_related_topics(mailId, {
       assoc_type_uri: 'dm4.mail.recipient',
@@ -11,20 +21,24 @@
       others_role_type_uri: 'dm4.core.part'
     }).items.sort(function (a, b) {
         return (a.value < b.value) ? -1 : (a.value > b.value) ? 1 : 0
-      })
+    })
   }
 
-  function getRecipientAssociation(mailId, recipientId) {
-    return dm4c.restc.get_association('dm4.mail.recipient',
-      mailId, recipientId, 'dm4.core.whole', 'dm4.core.part')
+  function getRecipientAssociations(mailId, recipientId) {
+    var recipients = [],
+      assocs = dm4c.restc.get_associations(mailId, recipientId, 'dm4.mail.recipient')
+    $.each(assocs, function(a, assoc) {
+        recipients.push(dm4c.restc.get_association_by_id(assoc.id, true))
+    })
+    return recipients
   }
 
   function getRecipientTypes() {
     return dm4c.restc.request('GET', '/mail/recipient/types').items
   }
 
-  function associate(mailId, recipientId) {
-    return dm4c.restc.request('POST', '/mail/' + mailId + '/recipient/' + recipientId)
+  function associate(mailId, addressId) {
+    return dm4c.restc.request('POST', '/mail/' + mailId + '/recipient/' + addressId)
   }
 
   // --- callbacks ---------------------------------------------------
@@ -61,23 +75,21 @@
     return $types.clone().val(association.composite['dm4.mail.recipient.type'].uri)
   }
 
-  function createRecipientEditor(mailId, recipient, $types) {
+  function createRecipientEditor(recipient, association, $types) {
     function click(event) {
       event.preventDefault()
       dm4c.page_panel.save()
       dm4c.do_reveal_related_topic(recipient.id, 'show')
     }
 
-    var association = getRecipientAssociation(mailId, recipient.id),
+    var email = association.composite['dm4.contacts.email_address'],
       $remove = dm4c.ui.button(onRemoveButtonClick, undefined, 'circle-minus'),
       $icon = dm4c.render.icon_link(recipient, click),
       $link = dm4c.render.topic_link(recipient, click),
       $rTypes = cloneAndSelectType($types, association),
       $recipient = $('<div>').append($rTypes).append($icon).append($link)
 
-    $.each(association.composite['dm4.contacts.email_address'], function (e, email) {
-      $recipient.append($('<span>').text('<' + email.value + '> '))
-    })
+    $recipient.append($('<span>').text('<' + email.value + '> '))
     $recipient.append($('<div>').addClass('remove-button').append($remove))
     return $recipient.addClass('recipient box level1').data('recipient', {
       association: association,
@@ -123,12 +135,15 @@
       $types = createTypeSelector(types),
       $add = dm4c.get_plugin('dm4.mail.plugin')
         .createCompletionField('Add', function ($item, item) {
-          associate(mailId, item.id)
-          $recipients.append(createRecipientEditor(mailId, item, $types))
+          var association = associate(mailId, item.id),
+            recipient = getRecipient(item.id, item.type_uri)
+          $recipients.append(createRecipientEditor(recipient, association, $types))
           // TODO show but not focus the created association
         })
     $.each(recipients, function (i, recipient) {
-      $recipients.append(createRecipientEditor(mailId, recipient, $types))
+      $.each(getRecipientAssociations(mailId, recipient.id), function(a, association) {
+          $recipients.append(createRecipientEditor(recipient, association, $types))
+      })
     })
     $recipients.on('change', 'select', onRecipientTypeSelect)
     return $('<div>').append($recipients).append($add)

@@ -1,10 +1,7 @@
 package de.deepamehta.plugins.mail;
 
-import static de.deepamehta.plugins.mail.TopicUtils.*;
-
 import java.io.File;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -56,6 +53,24 @@ import de.deepamehta.plugins.mail.service.MailService;
 @Produces(MediaType.APPLICATION_JSON)
 public class MailPlugin extends PluginActivator implements MailService, PostCreateTopicListener {
 
+    private static Logger log = Logger.getLogger(MailPlugin.class.getName());
+
+    // URI constants
+
+    public static final String AGGREGATION = "dm4.core.aggregation";
+
+    public static final String COMPOSITION = "dm4.core.composition";
+
+    public static final String PART = "dm4.core.part";
+
+    public static final String PART_TYPE = "dm4.core.part_type";
+
+    public static final String TOPIC_TYPE = "dm4.core.topic_type";
+
+    public static final String WHOLE = "dm4.core.whole";
+
+    public static final String WHOLE_TYPE = "dm4.core.whole_type";
+
     public static final String ATTACHMENTS = "attachments";
 
     public static final String BODY = "dm4.mail.body";
@@ -82,59 +97,56 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
 
     public static final String SUBJECT = "dm4.mail.subject";
 
-    private static final String USER_ACCOUNT = "dm4.accesscontrol.user_account";
+    public static final String USER_ACCOUNT = "dm4.accesscontrol.user_account";
 
-    private static Logger log = Logger.getLogger(MailPlugin.class.getName());
+    // service references
 
     private AccessControlService acService;
 
     private FilesService fileService = null;
 
-    private ImageCidEmbedment cidEmbedment = null;
+    // package internal helpers
 
     MailConfigurationCache config = null;
 
-    private boolean isInitialized;
+    ImageCidEmbedment cidEmbedment = null;
+
+    Autocomplete autocomplete = null;
+
+    boolean isInitialized;
 
     /**
      * @see #associateRecipient(long, Topic, String)
      */
     @POST
-    @Path("{mail}/recipient/{recipient}")
-    public Association associateRecipient(//
+    @Path("{mail}/recipient/{address}")
+    public Association mailRecipient(//
             @PathParam("mail") long mailId,//
-            @PathParam("recipient") long recipientId,//
+            @PathParam("address") long addressId,//
             @QueryParam("type") String type,//
             @HeaderParam("Cookie") ClientState cookie) {
         try {
-            return associateRecipient(//
-                    mailId,//
-                    dms.getTopic(recipientId, true, cookie),//
-                    config.checkRecipientType(type),//
-                    cookie);
+            return associateRecipient(mailId, addressId,//
+                    config.checkRecipientType(type), cookie);
         } catch (Exception e) {
             throw new WebApplicationException(e);
         }
     }
 
     @Override
-    public Association associateRecipient(long mailId, Topic recipient, RecipientType type,
-            ClientState clientState) {
-        log.info("associate " + mailId + " with recipient " + recipient.getId());
+    public Association associateRecipient(long mailId, long addressId, RecipientType type, ClientState clientState) {
+        log.info("associate " + mailId + " with recipient address " + addressId);
 
-        // get and check email addresses
-        List<TopicModel> addresses = recipient.getCompositeValue().getTopics(EMAIL_ADDRESS);
-        if (addresses.size() < 1) {
-            throw new IllegalArgumentException("recipient must have at least one email");
-        }
+        // create value of the recipient association
+        CompositeValue value = new CompositeValue()//
+                .putRef(RECIPIENT_TYPE, type.getUri())//
+                .putRef(EMAIL_ADDRESS, addressId);
 
-        CompositeValue value = new CompositeValue().putRef(RECIPIENT_TYPE, type.getUri());
-        for (TopicModel address : addresses) {
-            value.add(EMAIL_ADDRESS, new TopicModel(address.getId()));
-        }
+        // get and update or create a new recipient association
+        RelatedTopic recipient = getContactOfEmail(addressId, clientState);
+        Association association = getRecipientAssociation(mailId, //
+                addressId, recipient.getId(), clientState);
 
-        // find existing recipient association
-        Association association = getRecipientAssociation(mailId, recipient.getId(), clientState);
         if (association == null) { // create a recipient association
             return associateRecipient(mailId, recipient, value, clientState);
         } else { // update address and type references
@@ -147,31 +159,29 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
      * @see #associateSender(long, Topic)
      */
     @POST
-    @Path("{mail}/sender/{sender}")
-    public Association associateSender(//
+    @Path("{mail}/sender/{address}")
+    public Association mailSender(//
             @PathParam("mail") long mailId,//
-            @PathParam("sender") long senderId,//
+            @PathParam("address") long addressId,//
             @HeaderParam("Cookie") ClientState cookie) {
         try {
-            return associateSender(mailId, dms.getTopic(senderId, true, cookie), cookie);
+            return associateSender(mailId, addressId, cookie);
         } catch (Exception e) {
             throw new WebApplicationException(e);
         }
     }
 
     @Override
-    public Association associateSender(long mailId, Topic sender, ClientState clientState) {
-        log.info("associate " + mailId + " with sender " + sender.getId());
+    public Association associateSender(long mailId, long addressId, ClientState clientState) {
+        log.info("associate " + mailId + " with sender " + addressId);
 
-        // get and check email address
-        List<TopicModel> addresses = sender.getCompositeValue().getTopics(EMAIL_ADDRESS);
-        if (addresses.size() != 1) {
-            throw new IllegalArgumentException("sender must have exactly one email address");
-        }
-        CompositeValue value = new CompositeValue().putRef(EMAIL_ADDRESS, addresses.get(0).getId());
+        // create value of sender association
+        CompositeValue value = new CompositeValue().putRef(EMAIL_ADDRESS, addressId);
 
         // find existing sender association
+        RelatedTopic sender = getContactOfEmail(addressId, clientState);
         RelatedTopic oldSender = getSender(mailId, false, clientState);
+
         if (oldSender == null) { // create the first sender association
             return associateSender(mailId, sender, value, clientState);
         } else { // update or delete the old sender
@@ -205,21 +215,12 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
      */
     @GET
     @Path("/autocomplete/{term}")
-    public ResultSet<TopicModel> autocomplete(@PathParam("term") String term,
+    public List<TopicModel> search(@PathParam("term") String term, //
             @HeaderParam("Cookie") ClientState cookie) {
-        log.info("autocomplete " + term);
         try {
-            // hash parent results by ID to overwrite duplicated matches
-            Map<Long, TopicModel> results = new HashMap<Long, TopicModel>();
-            for (String uri : config.getSearchTypeUris()) {
-                String parentTypeUri = config.getParentOfSearchType(uri).getUri();
-                for (Topic topic : dms.searchTopics(term + "*", uri, cookie)) {
-                    Topic parentTopic = TopicUtils.getParentTopic(topic, parentTypeUri);
-                    results.put(parentTopic.getId(), parentTopic.getModel());
-                }
-            }
-            return new ResultSet<TopicModel>(results.size(), //
-                    new HashSet<TopicModel>(results.values()));
+            String query = "*" + term + "*";
+            log.info("autocomplete " + query);
+            return autocomplete.search(query, cookie);
         } catch (Exception e) {
             throw new WebApplicationException(e);
         }
@@ -263,8 +264,15 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
             if (includeRecipients) {
                 for (RelatedTopic recipient : mail.getRelatedTopics(RECIPIENT,//
                         WHOLE, PART, null, false, true, 0, null)) {
-                    associateRecipient(clone.getId(), recipient,//
-                            recipient.getRelatingAssociation().getCompositeValue(), cookie);
+                    for (Association association : dms.getAssociations(mail.getId(),//
+                            recipient.getId())) {
+                        if (association.getTypeUri().equals(RECIPIENT) == false) {
+                            continue; // sender or something else found
+                        }
+                        CompositeValue value = dms.getAssociation(association.getId(), //
+                                true, cookie).getCompositeValue();
+                        associateRecipient(clone.getId(), recipient, value, cookie);
+                    }
                 }
             }
             tx.success();
@@ -277,27 +285,29 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
     }
 
     /**
-     * Creates a new mail with one recipient.
+     * Creates a new mail to all email addresses of the contact topic.
      * 
      * @param recipientId
-     *            ID of a recipient topic with at least one email address.
+     *            ID of a recipient contact topic.
      * @param cookie
      *            Actual cookie.
      * @return Mail topic with associated recipient.
      */
     @POST
     @Path("/write/{recipient}")
-    public Topic writeTo(@PathParam("recipient") long recipientId,
+    public Topic writeTo(@PathParam("recipient") long recipientId,//
             @HeaderParam("Cookie") ClientState cookie) {
         log.info("write a mail to recipient " + recipientId);
         DeepaMehtaTransaction tx = dms.beginTx();
         try {
             Topic mail = dms.createTopic(new TopicModel(MAIL), cookie);
-            associateRecipient(//
-                    mail.getId(),//
-                    dms.getTopic(recipientId, true, cookie),//
-                    config.getDefaultRecipientType(),//
-                    cookie);
+            Topic recipient = dms.getTopic(recipientId, true, cookie);
+            if (recipient.getCompositeValue().has(EMAIL_ADDRESS)) {
+                for (TopicModel address : recipient.getCompositeValue().getTopics(EMAIL_ADDRESS)) {
+                    associateRecipient(mail.getId(), address.getId(),//
+                            config.getDefaultRecipientType(), cookie);
+                }
+            }
             tx.success();
             return mail;
         } catch (Exception e) {
@@ -363,6 +373,7 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
         try {
             log.info("load mail configuration");
             config = new MailConfigurationCache(dms);
+            autocomplete = new Autocomplete(dms, config);
             return config.getTopic();
         } catch (Exception e) {
             throw new WebApplicationException(e);
@@ -547,8 +558,8 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
             String kind = resourceInfo.toJSON().getString("kind");
             if (kind.equals("directory") == false) {
                 String repoPath = System.getProperty("dm4.filerepo.path");
-                String message = "attachment storage directory " + repoPath + File.separator
-                        + ATTACHMENTS + " can not be used";
+                String message = "attachment storage directory " + repoPath + File.separator + ATTACHMENTS
+                        + " can not be used";
                 throw new IllegalStateException(message);
             }
         } catch (WebApplicationException e) { // !exists
@@ -570,7 +581,8 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
 
         Topic creatorName = acService.getUsername(acService.getCreator(mail.getId()));
         if (creatorName != null) {
-            creator = TopicUtils.getParentTopic(creatorName, USER_ACCOUNT);
+            creator = creatorName.getRelatedTopic(null,//
+                    PART, WHOLE, USER_ACCOUNT, false, false, null);
         }
 
         // get user account specific sender
@@ -586,9 +598,10 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
         if (sender != null) {
             DeepaMehtaTransaction tx = dms.beginTx();
             try {
-                associateSender(mail.getId(), sender,//
-                        sender.getRelatingAssociation().getCompositeValue(), clientState);
-                RelatedTopic signature = getContactSignature(sender, clientState);
+                CompositeValue value = sender.getRelatingAssociation().getCompositeValue();
+                associateSender(mail.getId(), sender, value, clientState);
+                long addressId = value.getTopic(EMAIL_ADDRESS).getId();
+                RelatedTopic signature = getContactSignature(sender, addressId, clientState);
                 if (signature != null) {
                     associateSignature(mail.getId(), signature.getId(), clientState);
                 }
@@ -599,15 +612,13 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
         }
     }
 
-    private Association associateRecipient(long topicId, Topic recipient, CompositeValue value,
-            ClientState clientState) {
+    private Association associateRecipient(long topicId, Topic recipient, CompositeValue value, ClientState clientState) {
         return dms.createAssociation(new AssociationModel(RECIPIENT,//
                 new TopicRoleModel(recipient.getId(), PART),//
                 new TopicRoleModel(topicId, WHOLE), value), clientState);
     }
 
-    private Association associateSender(long topicId, Topic sender, CompositeValue value,
-            ClientState clientState) {
+    private Association associateSender(long topicId, Topic sender, CompositeValue value, ClientState clientState) {
         return dms.createAssociation(new AssociationModel(SENDER,//
                 new TopicRoleModel(sender.getId(), PART),//
                 new TopicRoleModel(topicId, WHOLE), value), clientState);
@@ -619,23 +630,41 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
                 new TopicRoleModel(mailId, WHOLE)), clientState);
     }
 
-    private RelatedTopic getContactSignature(Topic topic, ClientState clientState) {
-        return topic.getRelatedTopic(SENDER, PART, WHOLE, SIGNATURE, false, false, clientState);
+    private RelatedTopic getContactOfEmail(long addressId, ClientState clientState) {
+        Topic address = dms.getTopic(addressId, false, clientState);
+        RelatedTopic contact = address.getRelatedTopic(COMPOSITION,//
+                PART, WHOLE, null, false, false, null);
+        return contact;
     }
 
-    private Association getRecipientAssociation(long topicId, long recipientId,
-            ClientState clientState) {
-        return dms.getAssociation(RECIPIENT, topicId, recipientId, WHOLE, PART, false, clientState);
+    private RelatedTopic getContactSignature(Topic topic, long addressId, ClientState clientState) {
+        for (RelatedTopic signature : topic.getRelatedTopics(SENDER,//
+                PART, WHOLE, SIGNATURE, true, true, 0, clientState)) {
+            CompositeValue value = signature.getRelatingAssociation().getCompositeValue();
+            if (addressId == value.getTopic(EMAIL_ADDRESS).getId()) {
+                return signature;
+            }
+        }
+        return null;
     }
 
-    private RelatedTopic getSender(long topicId, boolean fetchRelatingComposite,
-            ClientState clientState) {
+    private Association getRecipientAssociation(long topicId, long addressId, long recipientId, ClientState clientState) {
+        for (Association recipient : dms.getAssociations(topicId, recipientId)) {
+            Association association = dms.getAssociation(recipient.getId(), true, clientState);
+            TopicModel address = association.getCompositeValue().getTopic(EMAIL_ADDRESS);
+            if (association.getTypeUri().equals(RECIPIENT) && address.getId() == addressId) {
+                return association;
+            }
+        }
+        return null;
+    }
+
+    private RelatedTopic getSender(long topicId, boolean fetchRelatingComposite, ClientState clientState) {
         return getSender(dms.getTopic(topicId, false, clientState),//
                 fetchRelatingComposite, clientState);
     }
 
-    private RelatedTopic getSender(Topic topic, boolean fetchRelatingComposite,
-            ClientState clientState) {
+    private RelatedTopic getSender(Topic topic, boolean fetchRelatingComposite, ClientState clientState) {
         return topic.getRelatedTopic(SENDER, WHOLE, PART, null, false,//
                 fetchRelatingComposite, clientState);
     }

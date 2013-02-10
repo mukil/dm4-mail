@@ -1,7 +1,6 @@
 package de.deepamehta.plugins.mail;
 
 import static de.deepamehta.plugins.mail.MailPlugin.*;
-import static de.deepamehta.plugins.mail.TopicUtils.*;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -23,7 +22,7 @@ import de.deepamehta.core.service.DeepaMehtaService;
  * 
  * @TODO configure MTA user and password (requires a password data type)
  */
-public class MailConfigurationCache {
+class MailConfigurationCache {
 
     private static Logger log = Logger.getLogger(MailConfigurationCache.class.getName());
 
@@ -108,10 +107,6 @@ public class MailConfigurationCache {
         return defaultSender;
     }
 
-    public Topic getParentOfSearchType(String uri) {
-        return revealSearchParentTypes().get(uri);
-    }
-
     public ResultSet<RelatedTopic> getRecipientTypes() {
         if (recipientTypes == null) {
             log.info("reveal recipient types");
@@ -171,7 +166,8 @@ public class MailConfigurationCache {
             log.info("reveal search parent types");
             searchParentTypes = new HashMap<String, Topic>();
             for (Topic type : getSearchTypes()) {
-                searchParentTypes.put(type.getUri(), TopicUtils.getParentType(type));
+                searchParentTypes.put(type.getUri(), type.getRelatedTopic(null,//
+                        PART_TYPE, WHOLE_TYPE, TOPIC_TYPE, false, false, null));
             }
         }
         return searchParentTypes;

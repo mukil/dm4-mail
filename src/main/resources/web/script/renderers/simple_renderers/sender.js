@@ -1,6 +1,15 @@
 /*global jQuery, dm4c*/
 (function ($, dm4c) {
 
+  function getSender(childId, parentUri) {
+    return dm4c.restc.get_topic_related_topics(childId, {
+      assoc_type_uri: 'dm4.core.composition',
+      my_role_type_uri: 'dm4.core.part',
+      others_role_type_uri: 'dm4.core.whole',
+      others_topic_type_uri: parentUri
+    }).items[0]
+  }
+
   function getSenderTopics(topicId) {
     return dm4c.restc.get_topic_related_topics(topicId, {
       assoc_type_uri: 'dm4.mail.sender',
@@ -14,8 +23,8 @@
       topicId, senderId, 'dm4.core.whole', 'dm4.core.part')
   }
 
-  function changeSender(topicId, senderId) {
-    return dm4c.restc.request('POST', '/mail/' + topicId + '/sender/' + senderId)
+  function changeSender(topicId, addressId) {
+    return dm4c.restc.request('POST', '/mail/' + topicId + '/sender/' + addressId)
   }
 
   function updateSenderView($topic, sender, association) {
@@ -58,7 +67,8 @@
       // show time
       $parent.append($sender).append(dm4c.get_plugin('dm4.mail.plugin')
         .createCompletionField('Choose', function ($item, item) {
-          updateSenderView($sender, item, changeSender(topic.id, item.id))
+          var sender = getSender(item.id, item.type_uri)
+          updateSenderView($sender, sender, changeSender(topic.id, item.id))
           // TODO show but not focus the created association
         }))
 

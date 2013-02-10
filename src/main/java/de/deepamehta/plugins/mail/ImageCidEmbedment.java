@@ -12,7 +12,7 @@ import org.jsoup.nodes.Element;
 
 import de.deepamehta.plugins.files.service.FilesService;
 
-public class ImageCidEmbedment {
+class ImageCidEmbedment {
 
     private static Logger log = Logger.getLogger(MailPlugin.class.getName());
 
