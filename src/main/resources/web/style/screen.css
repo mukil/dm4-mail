@@ -1,9 +1,9 @@
 
-.sender a,
-.sender span,
-.recipient img,
-.recipient a,
-.recipient span {
+.sender > a,
+.sender > span,
+.recipient > img,
+.recipient > a,
+.recipient > span {
     padding-left: .3em;
 }
 
