@@ -1,6 +1,6 @@
 # DeepaMehta 4 Mail Plugin
 
-simple Mail plugin
+simple Mail plugin (only SMTP ;-()
 
 ## Requirements
 
@@ -8,16 +8,40 @@ simple Mail plugin
 
 ## Usage
 
-the plugin adds a mail topic type and a configuration topic
+the plugin adds a *Mail* topic type and a *Mail Configuration* with default settings.
 
-### configure mail transfer agent communication
+### configure global and default mail preferences
 
 edit the configuration associated with the mail plugin
+to change the *Mail Transfer Agent Host* and choose a default *From* contact
+
+you can also change the default *Recipient Type* and
+the base *Topic Type*s of autocompletion
+
+hint: after each configuration update you have to call the *Reload* action of it
+
+![configuration](https://github.com/dgf/dm4-mail/raw/master/doc/configuration.png)
+
+### configure user specific sender and signature
+
+create a contact with at least one email address and a signature assigned to it
+
+reveal your *User Account* and edit it to assign a *From* contact
+
+from now on each new message is assigned to the configured sender and the signature
+of the corresponding email address
+
+![user configuration](https://github.com/dgf/dm4-mail/raw/master/doc/userconfig.png)
 
 ### create and send a mail
 
- * create a new mail topic
- * enter subject and text
- * choose sender (or define configure a default sender)
- * choose recipients
- * and finally send the mail
+to write a mail to a specific contact use the *Write Mail* action of the context menu
+
+or use the *Mail* entry of the *Create* menu to create a new mail without recipients
+
+in both cases, like in any other mail client,
+you can edit the recipient list with an autocompletion search,
+
+![write mail](https://github.com/dgf/dm4-mail/raw/master/doc/mail.png)
+
+
