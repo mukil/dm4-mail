@@ -11,7 +11,6 @@
       others_role_type_uri: 'dm4.core.whole',
       others_topic_type_uri: parentUri
     }).items[0]
-    return null
   }
 
   function getRecipientTopics(mailId) {
@@ -89,7 +88,12 @@
       $rTypes = cloneAndSelectType($types, association),
       $recipient = $('<div>').append($rTypes).append($icon).append($link)
 
-    $recipient.append($('<span>').text('<' + email.value + '> '))
+    if (email && email.value) {
+      $recipient.append($('<span>').text('<' + email.value + '>')).removeClass('invalidContact')
+    } else {
+      $recipient.append($('<span>').text('<Unknown Email Address>')).addClass('invalidContact')
+    }
+
     $recipient.append($('<div>').addClass('remove-button').append($remove))
     return $recipient.addClass('recipient box level1').data('recipient', {
       association: association,
