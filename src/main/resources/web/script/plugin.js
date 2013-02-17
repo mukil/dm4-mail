@@ -148,7 +148,9 @@ dm4c.add_plugin('dm4.mail.plugin', function () {
 
     function add() {
       $cancel.show()
-      $elem.show().focus()
+      $elem.val('') // overwrite the old search term
+      $elem.show()
+      $elem.focus() // FIXME - this focus call submits the page on <enter>
       $add.hide()
     }
 
@@ -158,21 +160,23 @@ dm4c.add_plugin('dm4.mail.plugin', function () {
       $add.show()
     }
 
+    // configure the autocomplete plugin
     $elem.autocomplete({
       minLength: 2,
       source: function (request, response) {
         lastTerm = request.term
         response(autoComplete(request.term))
       },
-      focus: function () {
+      focus: function (event) {
         // prevent value inserted on focus
-        return false
+        event.preventDefault()
       },
       select: function (event, ui) {
+        // prevent value inserted after selection
+        event.preventDefault()
+
         onSelect($(this), ui.item)
-        $(this).val('')
-        cancel() // cancel after change to hide edit fields ;-)
-        return false
+        cancel(event) // cancel after change to hide edit fields ;-)
       }
     })
 
