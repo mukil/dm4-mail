@@ -9,16 +9,21 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.logging.Logger;
 
 import de.deepamehta.core.RelatedTopic;
 import de.deepamehta.core.Topic;
+import de.deepamehta.core.model.CompositeValue;
 import de.deepamehta.core.model.TopicModel;
 import de.deepamehta.core.service.ClientState;
 import de.deepamehta.core.service.DeepaMehtaService;
 
 public class Autocomplete {
 
+    private static Logger log = Logger.getLogger(Autocomplete.class.getName());
+
     private final DeepaMehtaService dms;
+
     private final MailConfigurationCache config;
 
     public static final Comparator<TopicModel> VALUE_COMPARATOR = new Comparator<TopicModel>() {
@@ -33,8 +38,16 @@ public class Autocomplete {
         this.config = config;
     }
 
+    /**
+     * call a search on all configured topic types and on all email addresses
+     * 
+     * @param query
+     * @param clientState
+     * 
+     * @return topic list with email ID and contact type URI
+     */
     public List<TopicModel> search(String query, ClientState clientState) {
-        // search and hash parent results by ID (overwrites duplicated)
+        // search and hash parent results by ID (to overwrite duplicates)
         Map<Long, Topic> parents = new HashMap<Long, Topic>();
         for (String uri : config.getSearchTypeUris()) {
             for (Topic topic : dms.searchTopics(query, uri, clientState)) {
@@ -47,7 +60,7 @@ public class Autocomplete {
         Map<Long, TopicModel> addresses = new HashMap<Long, TopicModel>();
         for (Topic result : parents.values()) {
             Topic parent = dms.getTopic(result.getId(), true, clientState);
-            for (TopicModel address : parent.getCompositeValue().getTopics(EMAIL_ADDRESS)) {
+            for (TopicModel address : getEmailAddresses(parent, clientState)) {
                 putAddress(addresses, parent, address);
             }
         }
@@ -64,7 +77,25 @@ public class Autocomplete {
         // wrap, sort and return
         List<TopicModel> result = new ArrayList<TopicModel>(addresses.values());
         Collections.sort(result, VALUE_COMPARATOR);
+
+        // FIXME inconsistent model => use a specific view model
         return result;
+    }
+
+    /**
+     * 
+     * @param topic
+     * @param clientState
+     * 
+     * @return list of mail addresses with at minimum one empty address
+     */
+    private List<TopicModel> getEmailAddresses(Topic topic, ClientState clientState) {
+        if (topic.getCompositeValue().has(EMAIL_ADDRESS) == false) {
+            log.warning("composite of " + topic.getSimpleValue() + " contains no email address");
+            topic.setCompositeValue(new CompositeValue().add(EMAIL_ADDRESS, //
+                    new TopicModel(EMAIL_ADDRESS)), clientState, null);
+        }
+        return topic.getCompositeValue().getTopics(EMAIL_ADDRESS);
     }
 
     private RelatedTopic getParent(Topic child) {
