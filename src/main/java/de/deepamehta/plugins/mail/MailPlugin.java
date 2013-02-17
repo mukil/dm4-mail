@@ -71,6 +71,8 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
 
     public static final String WHOLE_TYPE = "dm4.core.whole_type";
 
+    public static final String FILE = "dm4.files.file";
+
     public static final String ATTACHMENTS = "attachments";
 
     public static final String BODY = "dm4.mail.body";
@@ -78,8 +80,6 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
     public static final String EMAIL_ADDRESS = "dm4.contacts.email_address";
 
     public static final String DATE = "dm4.mail.date";
-
-    public static final String FILE = "dm4.files.file";
 
     public static final String FROM = "dm4.mail.from";
 
@@ -471,8 +471,8 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
                 reportException(statusReport, Level.SEVERE, MailError.RECIPIENT_TYPE, e);
             }
         } catch (InvalidRecipients e) {
-            log.log(Level.INFO, MailError.RECIPIENTS.getMessage(), e);
             for (String recipient : e.getRecipients()) {
+                log.log(Level.INFO, MailError.RECIPIENTS.getMessage() + ": " + recipient);
                 statusReport.addError(MailError.RECIPIENTS, recipient);
             }
         }
@@ -675,7 +675,7 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
     }
 
     private Association getSenderAssociation(long topicId, long senderId, ClientState clientState) {
-        return dms.getAssociation(SENDER, topicId, senderId, WHOLE, PART, false, clientState);
+        return dms.getAssociation(SENDER, topicId, senderId, WHOLE, PART, true, clientState);
     }
 
     private void mapRecipients(HtmlEmail email, Map<RecipientType, List<InternetAddress>> recipients)
@@ -698,11 +698,16 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
     }
 
     private void reportException(StatusReport report, Level level, MailError error, Exception e) {
-        log.log(level, error.getMessage(), e);
         String message = e.getMessage();
         Throwable cause = e.getCause();
         if (cause != null) {
             message += ": " + cause.getMessage();
+        }
+        String logMessage = error.getMessage() + ": " + message;
+        if (level == Level.WARNING || level == Level.SEVERE) {
+            log.log(level, logMessage, e); // log the exception trace
+        } else {
+            log.log(level, logMessage); // log only the message
         }
         report.addError(error, message);
     }

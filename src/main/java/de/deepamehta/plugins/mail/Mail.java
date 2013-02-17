@@ -78,7 +78,7 @@ public class Mail {
                 CompositeValue value = dms.getAssociation(association.getId(),//
                         true, null).getCompositeValue(); // re-fetch with value
                 if (value.has(RECIPIENT_TYPE) == false) {
-                    invalid.add("Recipient type of \"" + personal + "\" is not defined.");
+                    invalid.add("Recipient type of \"" + personal + "\" is not defined");
                     continue;
                 }
                 if (value.has(EMAIL_ADDRESS) == false) {
@@ -92,7 +92,7 @@ public class Mail {
                     results.add(type.getUri(), email, personal);
                 } catch (Exception e) {
                     invalid.add("Email address \"" + email + "\" of recipient \"" + //
-                            personal + "\" is invalid.");
+                            personal + "\" is invalid");
                 }
             }
         }
