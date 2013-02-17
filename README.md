@@ -16,7 +16,7 @@ edit the configuration associated with the mail plugin
 to change the *Mail Transfer Agent Host* and choose a default *From* contact
 
 you can also change the default *Recipient Type* and
-the base *Topic Type*s of autocompletion
+the base *Topic Type* list of autocompletion
 
 hint: after each configuration update you have to call the *Reload* action of it
 
@@ -40,7 +40,12 @@ to write a mail to a specific contact use the *Write Mail* action of the context
 or use the *Mail* entry of the *Create* menu to create a new mail without recipients
 
 in both cases, like in any other mail client,
-you can edit the recipient list with an autocompletion search,
+you can edit the recipient list with an autocompletion search
+
+keyboard hints: use the <TAB> key to select an additional recipient from the result list
+<ENTER> submits the page and switches in the view mode, have a look at the
+[Keyboard interaction](http://api.jqueryui.com/autocomplete/) section
+of the underlying jQuery UI component
 
 ![write mail](https://github.com/dgf/dm4-mail/raw/master/doc/mail.png)
 
