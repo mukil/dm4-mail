@@ -5,28 +5,10 @@
     return dm4c.restc.get_topics('dm4.mail.signature', false, true).items
   }
 
-  function getSignature(signatureId) {
-    return dm4c.restc.get_topic_by_id(signatureId, true)
-  }
-
-  function getSignatureBody(signatureId) {
-    var signature = getSignature(signatureId)
-    if (signature.composite['dm4.mail.body']) {
-      return signature.composite['dm4.mail.body'].value || 'empty signature'
-    } else {
-      return '' // invalid signature
-    }
-  }
-
-  function getSignatureOfMail(mailId) {
-    var signature = dm4c.restc.get_topic_related_topics(mailId, {
-      assoc_type_uri: 'dm4.core.aggregation',
-      my_role_type_uri: 'dm4.core.whole',
-      others_role_type_uri: 'dm4.core.part',
-      others_topic_type_uri: 'dm4.mail.signature'
-    }, false, 1)
-    if (signature.total_count === 1) {
-        return signature.items[0].id // the first one
+  function getSignatureIdOfMail(mail) {
+    var signatures = mail.composite['dm4.mail.signature']
+    if (signatures && signatures.length === 1) {
+        return signatures[0].id // the first one
     } else {
         return -1
     }
@@ -48,13 +30,13 @@
     render_info: function (pages, $parent, level) {
       dm4c.render.field_label(pages[0].object_type.value, $parent)
       if (pages[0].object.id !== -1) { // ignore empty default page model
-        $parent.append($('<div>').append(getSignatureBody(pages[0].object.id)))
+        $parent.append($('<div>').html(pages[0].object.value))
       }
     },
 
     render_form: function (pages, $parent, level) {
-      var deselectedId = -1, $signature = $('<div>'),
-        selectedId = getSignatureOfMail(pages[0].toplevel_object.id),
+      var deselectedId = -1,
+        selectedId = getSignatureIdOfMail(pages[0].toplevel_object),
         menu = createSignatureMenu(selectedId, function (signature) {
           // value contains a new selection?
           if (selectedId !== signature.value) {
@@ -66,14 +48,11 @@
             }
           }
           selectedId = signature.value
-          $signature.empty().append(getSignatureBody(selectedId))
+          dm4c.fire_event('render_mail_signature', selectedId)
         })
-      if (selectedId !== -1) {
-          $signature.append(getSignatureBody(selectedId))
-      }
-      $parent.append($('<div>').append(menu.dom).append($signature))
+      $parent.append(menu.dom)
 
-      return function () { // create aggregation of last selection
+      return function () { // creates aggregation of last selection
         var values = []
         if (selectedId !== -1) {
           values.push(dm4c.REF_PREFIX + selectedId)

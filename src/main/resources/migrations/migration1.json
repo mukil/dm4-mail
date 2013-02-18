@@ -78,6 +78,19 @@
             index_mode_uris: [ "dm4.core.fulltext" ]
         },
         {
+            value: "Signature Preview",
+            uri: "dm4.mail.signature.preview",
+            data_type_uri: "dm4.core.boolean",
+            view_config_topics: [
+                { # dummy field to hold the renderer, that previews the chosen signature body
+                    type_uri: "dm4.webclient.view_config",
+                    composite: {
+                        dm4.webclient.simple_renderer_uri: "dm4.mail.signature.preview"
+                    }
+                }
+            ]
+        },
+        {
             value: "Signature",
             uri: "dm4.mail.signature",
             data_type_uri: "dm4.core.composite",
@@ -127,16 +140,6 @@
                     assoc_type_uri:        "dm4.core.composition_def"
                 },
                 {
-                    part_type_uri:   "dm4.mail.recipient.list",
-                    part_cardinality_uri:  "dm4.core.one",
-                    assoc_type_uri:        "dm4.core.composition_def"
-                },
-                {
-                    part_type_uri:   "dm4.mail.body",
-                    part_cardinality_uri:  "dm4.core.one",
-                    assoc_type_uri:        "dm4.core.composition_def"
-                },
-                {
                     part_type_uri:   "dm4.mail.signature",
                     part_cardinality_uri:  "dm4.core.many", # should be one
                     whole_cardinality_uri: "dm4.core.many",
@@ -152,6 +155,21 @@
                     ]
                 },
                 {
+                    part_type_uri:   "dm4.mail.recipient.list",
+                    part_cardinality_uri:  "dm4.core.one",
+                    assoc_type_uri:        "dm4.core.composition_def"
+                },
+                {
+                    part_type_uri:   "dm4.mail.body",
+                    part_cardinality_uri:  "dm4.core.one",
+                    assoc_type_uri:        "dm4.core.composition_def"
+                },
+                {
+                    part_type_uri:   "dm4.mail.signature.preview",
+                    part_cardinality_uri:  "dm4.core.one",
+                    assoc_type_uri:        "dm4.core.composition_def"
+                },
+                {
                     part_type_uri:   "dm4.mail.date",
                     part_cardinality_uri:  "dm4.core.one",
                     assoc_type_uri:        "dm4.core.composition_def"
@@ -159,7 +177,15 @@
                 {
                     part_type_uri:   "dm4.mail.id",
                     part_cardinality_uri:  "dm4.core.one",
-                    assoc_type_uri:        "dm4.core.composition_def"
+                    assoc_type_uri:        "dm4.core.composition_def",
+                    view_config_topics: [
+                        { # hide the internal message ID
+                            type_uri: "dm4.webclient.view_config",
+                            composite: {
+                                dm4.webclient.viewable: false
+                            }
+                        }
+                    ]
                 },
                 {
                     part_type_uri:   "dm4.files.file",
