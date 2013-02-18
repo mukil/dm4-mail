@@ -42,8 +42,8 @@ or use the *Mail* entry of the *Create* menu to create a new mail without recipi
 in both cases, like in any other mail client,
 you can edit the recipient list with an autocompletion search
 
-keyboard hints: use the <TAB> key to select an additional recipient from the result list
-<ENTER> submits the page and switches in the view mode, have a look at the
+keyboard hints: use the `<TAB>` key to select an additional recipient from the result list
+`<ENTER>` submits the page and switches in the view mode, have a look at the
 [Keyboard interaction](http://api.jqueryui.com/autocomplete/) section
 of the underlying jQuery UI component
 
