@@ -12,11 +12,9 @@ import javax.mail.internet.AddressException;
 import javax.mail.internet.InternetAddress;
 
 import de.deepamehta.core.Association;
+import de.deepamehta.core.CompositeValue;
 import de.deepamehta.core.RelatedTopic;
 import de.deepamehta.core.Topic;
-import de.deepamehta.core.model.CompositeValue;
-import de.deepamehta.core.model.SimpleValue;
-import de.deepamehta.core.model.TopicModel;
 import de.deepamehta.core.service.ClientState;
 import de.deepamehta.core.service.DeepaMehtaService;
 import de.deepamehta.core.storage.spi.DeepaMehtaTransaction;
@@ -47,7 +45,7 @@ public class Mail {
         if (topic.getCompositeValue().has(SIGNATURE) == false) {
             throw new IllegalArgumentException("Signature of mail not found");
         } else {
-            List<TopicModel> signature = topic.getCompositeValue().getTopics(SIGNATURE);
+            List<Topic> signature = topic.getCompositeValue().getTopics(SIGNATURE);
             CompositeValue value = signature.get(0).getCompositeValue();
             if (value.has(BODY) == false) {
                 throw new IllegalArgumentException("Signature of mail is empty");
@@ -86,7 +84,7 @@ public class Mail {
                     continue;
                 }
 
-                TopicModel type = value.getTopic(RECIPIENT_TYPE);
+                Topic type = value.getTopic(RECIPIENT_TYPE);
                 String email = value.getTopic(EMAIL_ADDRESS).getSimpleValue().toString();
                 try {
                     results.add(type.getUri(), email, personal);
@@ -131,10 +129,13 @@ public class Mail {
 
     public Topic setMessageId(String messageId) {
         DeepaMehtaTransaction tx = dms.beginTx();
-        topic.setChildTopicValue(DATE, new SimpleValue(new Date().toString()));
-        topic.setChildTopicValue(MESSAGE_ID, new SimpleValue(messageId));
-        tx.success();
-        tx.finish();
+        try {
+            topic.getCompositeValue().set(DATE, new Date().toString(), null, null);
+            topic.getCompositeValue().set(MESSAGE_ID, messageId, null, null);
+            tx.success();
+        } finally {
+            tx.finish();
+        }
         return topic;
     }
 

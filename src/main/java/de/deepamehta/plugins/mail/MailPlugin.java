@@ -25,11 +25,12 @@ import org.apache.commons.mail.HtmlEmail;
 import org.jsoup.nodes.Document;
 
 import de.deepamehta.core.Association;
+import de.deepamehta.core.CompositeValue;
 import de.deepamehta.core.RelatedTopic;
 import de.deepamehta.core.ResultSet;
 import de.deepamehta.core.Topic;
 import de.deepamehta.core.model.AssociationModel;
-import de.deepamehta.core.model.CompositeValue;
+import de.deepamehta.core.model.CompositeValueModel;
 import de.deepamehta.core.model.SimpleValue;
 import de.deepamehta.core.model.TopicModel;
 import de.deepamehta.core.model.TopicRoleModel;
@@ -138,7 +139,7 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
         log.info("associate " + mailId + " with recipient address " + addressId);
 
         // create value of the recipient association
-        CompositeValue value = new CompositeValue()//
+        CompositeValueModel value = new CompositeValueModel()//
                 .putRef(RECIPIENT_TYPE, type.getUri())//
                 .putRef(EMAIL_ADDRESS, addressId);
 
@@ -176,7 +177,7 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
         log.info("associate " + mailId + " with sender " + addressId);
 
         // create value of sender association
-        CompositeValue value = new CompositeValue().putRef(EMAIL_ADDRESS, addressId);
+        CompositeValueModel value = new CompositeValueModel().putRef(EMAIL_ADDRESS, addressId);
 
         // find existing sender association
         RelatedTopic sender = getContactOfEmail(addressId, clientState);
@@ -247,7 +248,7 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
         DeepaMehtaTransaction tx = dms.beginTx();
         try {
             Topic mail = dms.getTopic(mailId, true, cookie);
-            TopicModel model = new TopicModel(MAIL, mail.getCompositeValue()//
+            TopicModel model = new TopicModel(MAIL, mail.getCompositeValue().getModel() // copy
                     .put(DATE, "").put(MESSAGE_ID, "")); // nullify date and ID
             Topic clone = dms.createTopic(model, cookie);
 
@@ -257,8 +258,8 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
 
             // copy sender association
             RelatedTopic sender = getSender(mail, true, cookie);
-            associateSender(clone.getId(), sender,//
-                    sender.getRelatingAssociation().getCompositeValue(), cookie);
+            associateSender(clone.getId(), sender, sender.getRelatingAssociation()//
+                    .getCompositeValue().getModel(), cookie);
 
             // copy recipient associations
             if (includeRecipients) {
@@ -271,7 +272,7 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
                         }
                         CompositeValue value = dms.getAssociation(association.getId(), //
                                 true, cookie).getCompositeValue();
-                        associateRecipient(clone.getId(), recipient, value, cookie);
+                        associateRecipient(clone.getId(), recipient, value.getModel(), cookie);
                     }
                 }
             }
@@ -303,7 +304,7 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
             Topic mail = dms.createTopic(new TopicModel(MAIL), cookie);
             Topic recipient = dms.getTopic(recipientId, true, cookie);
             if (recipient.getCompositeValue().has(EMAIL_ADDRESS)) {
-                for (TopicModel address : recipient.getCompositeValue().getTopics(EMAIL_ADDRESS)) {
+                for (Topic address : recipient.getCompositeValue().getTopics(EMAIL_ADDRESS)) {
                     associateRecipient(mail.getId(), address.getId(),//
                             config.getDefaultRecipientType(), cookie);
                 }
@@ -389,7 +390,7 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
             if (topic.getCompositeValue().has(FROM) == false) { // new mail
                 associateDefaultSender(topic, clientState);
             } else { // copied mail
-                TopicModel from = topic.getCompositeValue().getTopic(FROM);
+                Topic from = topic.getCompositeValue().getTopic(FROM);
                 if (from.getSimpleValue().booleanValue() == false) { // sender?
                     associateDefaultSender(topic, clientState);
                 }
@@ -598,7 +599,8 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
         if (sender != null) {
             DeepaMehtaTransaction tx = dms.beginTx();
             try {
-                CompositeValue value = sender.getRelatingAssociation().getCompositeValue();
+                CompositeValueModel value = sender.getRelatingAssociation()//
+                        .getCompositeValue().getModel();
                 associateSender(mail.getId(), sender, value, clientState);
                 long addressId = value.getTopic(EMAIL_ADDRESS).getId();
                 RelatedTopic signature = getContactSignature(sender, addressId, clientState);
@@ -612,13 +614,14 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
         }
     }
 
-    private Association associateRecipient(long topicId, Topic recipient, CompositeValue value, ClientState clientState) {
+    private Association associateRecipient(long topicId, Topic recipient, CompositeValueModel value,
+            ClientState clientState) {
         return dms.createAssociation(new AssociationModel(RECIPIENT,//
                 new TopicRoleModel(recipient.getId(), PART),//
                 new TopicRoleModel(topicId, WHOLE), value), clientState);
     }
 
-    private Association associateSender(long topicId, Topic sender, CompositeValue value, ClientState clientState) {
+    private Association associateSender(long topicId, Topic sender, CompositeValueModel value, ClientState clientState) {
         return dms.createAssociation(new AssociationModel(SENDER,//
                 new TopicRoleModel(sender.getId(), PART),//
                 new TopicRoleModel(topicId, WHOLE), value), clientState);
@@ -651,7 +654,7 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
     private Association getRecipientAssociation(long topicId, long addressId, long recipientId, ClientState clientState) {
         for (Association recipient : dms.getAssociations(topicId, recipientId)) {
             Association association = dms.getAssociation(recipient.getId(), true, clientState);
-            TopicModel address = association.getCompositeValue().getTopic(EMAIL_ADDRESS);
+            Topic address = association.getCompositeValue().getTopic(EMAIL_ADDRESS);
             if (association.getTypeUri().equals(RECIPIENT) && address.getId() == addressId) {
                 return association;
             }

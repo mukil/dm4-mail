@@ -13,7 +13,7 @@ import java.util.logging.Logger;
 
 import de.deepamehta.core.RelatedTopic;
 import de.deepamehta.core.Topic;
-import de.deepamehta.core.model.CompositeValue;
+import de.deepamehta.core.model.CompositeValueModel;
 import de.deepamehta.core.model.TopicModel;
 import de.deepamehta.core.service.ClientState;
 import de.deepamehta.core.service.DeepaMehtaService;
@@ -90,12 +90,14 @@ public class Autocomplete {
      * @return list of mail addresses with at minimum one empty address
      */
     private List<TopicModel> getEmailAddresses(Topic topic, ClientState clientState) {
+        // FIXME attached value should support add(...) of child compositions
         if (topic.getCompositeValue().has(EMAIL_ADDRESS) == false) {
             log.warning("composite of " + topic.getSimpleValue() + " contains no email address");
-            topic.setCompositeValue(new CompositeValue().add(EMAIL_ADDRESS, //
+            topic.setCompositeValue(new CompositeValueModel().add(EMAIL_ADDRESS, //
                     new TopicModel(EMAIL_ADDRESS)), clientState, null);
         }
-        return topic.getCompositeValue().getTopics(EMAIL_ADDRESS);
+        // return the existing or the newly created list of addresses
+        return topic.getCompositeValue().getModel().getTopics(EMAIL_ADDRESS);
     }
 
     private RelatedTopic getParent(Topic child) {

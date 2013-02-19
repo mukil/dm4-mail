@@ -14,7 +14,6 @@ import de.deepamehta.core.RelatedTopic;
 import de.deepamehta.core.ResultSet;
 import de.deepamehta.core.Topic;
 import de.deepamehta.core.model.SimpleValue;
-import de.deepamehta.core.model.TopicModel;
 import de.deepamehta.core.service.DeepaMehtaService;
 
 /**
@@ -89,7 +88,7 @@ class MailConfigurationCache {
     public RecipientType getDefaultRecipientType() {
         if (defaultRecipientType == null) {
             log.info("reveal default recipient type");
-            TopicModel type = getConfiguration().getCompositeValue().getTopic(RECIPIENT_TYPE);
+            Topic type = getConfiguration().getCompositeValue().getTopic(RECIPIENT_TYPE);
             defaultRecipientType = RecipientType.fromUri(type.getUri());
         }
         return defaultRecipientType;
