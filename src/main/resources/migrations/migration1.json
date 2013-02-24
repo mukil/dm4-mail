@@ -144,7 +144,7 @@
                     part_cardinality_uri:  "dm4.core.many", # should be one
                     whole_cardinality_uri: "dm4.core.many",
                     assoc_type_uri:        "dm4.core.aggregation_def",
-                    view_config_topics: [
+                    view_config_topics: [ # composite does not support custom renderer,
                         { # use a many aggregation to inject a renderer that only supports one part
                             type_uri: "dm4.webclient.view_config",
                             composite: {

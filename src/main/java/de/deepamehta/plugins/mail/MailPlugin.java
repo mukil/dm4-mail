@@ -252,10 +252,6 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
                     .put(DATE, "").put(MESSAGE_ID, "")); // nullify date and ID
             Topic clone = dms.createTopic(model, cookie);
 
-            // copy signature
-            Topic signature = getSignature(mail, cookie);
-            associateSignature(clone.getId(), signature.getId(), cookie);
-
             // copy sender association
             RelatedTopic sender = getSender(mail, true, cookie);
             associateSender(clone.getId(), sender, sender.getRelatingAssociation()//
@@ -576,6 +572,12 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
         }
     }
 
+    /**
+     * @param mail
+     * @param clientState
+     * 
+     * @see MailPlugin#postCreateTopic(Topic, ClientState, Directives)
+     */
     private void associateDefaultSender(Topic mail, ClientState clientState) {
         Topic creator = null;
         RelatedTopic sender = null;
@@ -605,7 +607,7 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
                 long addressId = value.getTopic(EMAIL_ADDRESS).getId();
                 RelatedTopic signature = getContactSignature(sender, addressId, clientState);
                 if (signature != null) {
-                    associateSignature(mail.getId(), signature.getId(), clientState);
+                    mail.getCompositeValue().getModel().add(SIGNATURE, signature.getModel());
                 }
                 tx.success();
             } finally {
@@ -625,12 +627,6 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
         return dms.createAssociation(new AssociationModel(SENDER,//
                 new TopicRoleModel(sender.getId(), PART),//
                 new TopicRoleModel(topicId, WHOLE), value), clientState);
-    }
-
-    private Association associateSignature(long mailId, long signatureId, ClientState clientState) {
-        return dms.createAssociation(new AssociationModel(AGGREGATION,//
-                new TopicRoleModel(signatureId, PART),//
-                new TopicRoleModel(mailId, WHOLE)), clientState);
     }
 
     private RelatedTopic getContactOfEmail(long addressId, ClientState clientState) {
@@ -670,11 +666,6 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
     private RelatedTopic getSender(Topic topic, boolean fetchRelatingComposite, ClientState clientState) {
         return topic.getRelatedTopic(SENDER, WHOLE, PART, null, false,//
                 fetchRelatingComposite, clientState);
-    }
-
-    private Topic getSignature(Topic mail, ClientState clientState) {
-        return mail.getRelatedTopics(AGGREGATION, WHOLE, PART,//
-                SIGNATURE, false, false, 1, clientState).iterator().next();
     }
 
     private Association getSenderAssociation(long topicId, long senderId, ClientState clientState) {
