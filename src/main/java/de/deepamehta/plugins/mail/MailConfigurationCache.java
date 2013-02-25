@@ -98,7 +98,7 @@ class MailConfigurationCache {
         if (defaultSenderIsNull == false && defaultSender == null) {
             log.info("reveal default sender");
             defaultSender = getConfiguration().getRelatedTopic(SENDER,//
-                    WHOLE, PART, null, false, true, null);
+                    PARENT, CHILD, null, false, true, null);
             if (defaultSender == null) {
                 defaultSenderIsNull = true;
             }
@@ -135,7 +135,7 @@ class MailConfigurationCache {
             // get aggregated composite search types
             // FIXME use a specific association type and field renderer
             searchTypes = getConfiguration().getRelatedTopics(AGGREGATION,//
-                    WHOLE, PART, TOPIC_TYPE, false, false, 0, null);
+                    PARENT, CHILD, TOPIC_TYPE, false, false, 0, null);
         }
         return searchTypes;
     }
@@ -166,7 +166,7 @@ class MailConfigurationCache {
             searchParentTypes = new HashMap<String, Topic>();
             for (Topic type : getSearchTypes()) {
                 searchParentTypes.put(type.getUri(), type.getRelatedTopic(null,//
-                        PART_TYPE, WHOLE_TYPE, TOPIC_TYPE, false, false, null));
+                        CHILD_TYPE, PARENT_TYPE, TOPIC_TYPE, false, false, null));
             }
         }
         return searchParentTypes;

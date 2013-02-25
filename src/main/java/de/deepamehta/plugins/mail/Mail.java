@@ -64,7 +64,7 @@ public class Mail {
         RecipientsByType results = new RecipientsByType();
 
         for (RelatedTopic recipient : topic.getRelatedTopics(RECIPIENT,//
-                WHOLE, PART, null, false, false, 0, null)) {
+                PARENT, CHILD, null, false, false, 0, null)) {
             String personal = recipient.getSimpleValue().toString();
 
             for (Association association : dms.getAssociations(topic.getId(), recipient.getId())) {
@@ -102,7 +102,7 @@ public class Mail {
 
     public InternetAddress getSender() throws UnsupportedEncodingException, AddressException {
         RelatedTopic sender = topic.getRelatedTopic(SENDER,//
-                WHOLE, PART, null, false, true, null);
+                PARENT, CHILD, null, false, true, null);
         if (sender == null) {
             throw new IllegalArgumentException("Contact required");
         }
@@ -142,7 +142,7 @@ public class Mail {
     public Set<Long> getAttachmentIds() {
         Set<Long> attachments = new HashSet<Long>();
         for (RelatedTopic attachment : topic.getRelatedTopics(AGGREGATION,//
-                WHOLE, PART, FILE, false, false, 0, clientState)) {
+                PARENT, CHILD, FILE, false, false, 0, clientState)) {
             attachments.add(attachment.getId());
         }
         return attachments;

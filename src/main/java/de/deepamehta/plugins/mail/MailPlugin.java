@@ -62,15 +62,15 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
 
     public static final String COMPOSITION = "dm4.core.composition";
 
-    public static final String PART = "dm4.core.part";
+    public static final String CHILD = "dm4.core.child";
 
-    public static final String PART_TYPE = "dm4.core.part_type";
+    public static final String CHILD_TYPE = "dm4.core.child_type";
 
     public static final String TOPIC_TYPE = "dm4.core.topic_type";
 
-    public static final String WHOLE = "dm4.core.whole";
+    public static final String PARENT = "dm4.core.parent";
 
-    public static final String WHOLE_TYPE = "dm4.core.whole_type";
+    public static final String PARENT_TYPE = "dm4.core.parent_type";
 
     public static final String FILE = "dm4.files.file";
 
@@ -260,7 +260,7 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
             // copy recipient associations
             if (includeRecipients) {
                 for (RelatedTopic recipient : mail.getRelatedTopics(RECIPIENT,//
-                        WHOLE, PART, null, false, true, 0, null)) {
+                        PARENT, CHILD, null, false, true, 0, null)) {
                     for (Association association : dms.getAssociations(mail.getId(),//
                             recipient.getId())) {
                         if (association.getTypeUri().equals(RECIPIENT) == false) {
@@ -585,7 +585,7 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
         Topic creatorName = acService.getUsername(acService.getCreator(mail.getId()));
         if (creatorName != null) {
             creator = creatorName.getRelatedTopic(null,//
-                    PART, WHOLE, USER_ACCOUNT, false, false, null);
+                    CHILD, PARENT, USER_ACCOUNT, false, false, null);
         }
 
         // get user account specific sender
@@ -619,26 +619,26 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
     private Association associateRecipient(long topicId, Topic recipient, CompositeValueModel value,
             ClientState clientState) {
         return dms.createAssociation(new AssociationModel(RECIPIENT,//
-                new TopicRoleModel(recipient.getId(), PART),//
-                new TopicRoleModel(topicId, WHOLE), value), clientState);
+                new TopicRoleModel(recipient.getId(), CHILD),//
+                new TopicRoleModel(topicId, PARENT), value), clientState);
     }
 
     private Association associateSender(long topicId, Topic sender, CompositeValueModel value, ClientState clientState) {
         return dms.createAssociation(new AssociationModel(SENDER,//
-                new TopicRoleModel(sender.getId(), PART),//
-                new TopicRoleModel(topicId, WHOLE), value), clientState);
+                new TopicRoleModel(sender.getId(), CHILD),//
+                new TopicRoleModel(topicId, PARENT), value), clientState);
     }
 
     private RelatedTopic getContactOfEmail(long addressId, ClientState clientState) {
         Topic address = dms.getTopic(addressId, false, clientState);
         RelatedTopic contact = address.getRelatedTopic(COMPOSITION,//
-                PART, WHOLE, null, false, false, null);
+                CHILD, PARENT, null, false, false, null);
         return contact;
     }
 
     private RelatedTopic getContactSignature(Topic topic, long addressId, ClientState clientState) {
         for (RelatedTopic signature : topic.getRelatedTopics(SENDER,//
-                PART, WHOLE, SIGNATURE, true, true, 0, clientState)) {
+                CHILD, PARENT, SIGNATURE, true, true, 0, clientState)) {
             CompositeValue value = signature.getRelatingAssociation().getCompositeValue();
             if (addressId == value.getTopic(EMAIL_ADDRESS).getId()) {
                 return signature;
@@ -664,12 +664,12 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
     }
 
     private RelatedTopic getSender(Topic topic, boolean fetchRelatingComposite, ClientState clientState) {
-        return topic.getRelatedTopic(SENDER, WHOLE, PART, null, false,//
+        return topic.getRelatedTopic(SENDER, PARENT, CHILD, null, false,//
                 fetchRelatingComposite, clientState);
     }
 
     private Association getSenderAssociation(long topicId, long senderId, ClientState clientState) {
-        return dms.getAssociation(SENDER, topicId, senderId, WHOLE, PART, true, clientState);
+        return dms.getAssociation(SENDER, topicId, senderId, PARENT, CHILD, true, clientState);
     }
 
     private void mapRecipients(HtmlEmail email, Map<RecipientType, List<InternetAddress>> recipients)

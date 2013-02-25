@@ -101,7 +101,7 @@ public class Autocomplete {
     }
 
     private RelatedTopic getParent(Topic child) {
-        return child.getRelatedTopic(COMPOSITION, PART, WHOLE, null, false, false, null);
+        return child.getRelatedTopic(COMPOSITION, CHILD, PARENT, null, false, false, null);
     }
 
     /**
