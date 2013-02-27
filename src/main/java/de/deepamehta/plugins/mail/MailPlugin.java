@@ -156,6 +156,28 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
         }
     }
 
+    @Override
+    public void associateValidatedRecipients(long mailId, List<Topic> recipients, ClientState cookie) {
+        for (Topic recipient : recipients) {
+            Topic topic = dms.getTopic(recipient.getId(), true, cookie);
+            if (topic.getCompositeValue().has(EMAIL_ADDRESS)) {
+                String personal = recipient.getSimpleValue().toString();
+                for (Topic email : topic.getCompositeValue().getTopics(EMAIL_ADDRESS)) {
+                    String address = email.getSimpleValue().toString();
+                    try {
+                        new InternetAddress(address, personal).validate();
+                    } catch (Exception e) {
+                        log.log(Level.INFO, "email address '" + address + "' of contact '" + //
+                                personal + "'" + " is invalid: " + e.getMessage());
+                        continue; // check the next one
+                    }
+                    // associate validated email address as BCC recipient
+                    associateRecipient(mailId, email.getId(), RecipientType.BCC, cookie);
+                }
+            }
+        }
+    }
+
     /**
      * @see #associateSender(long, Topic)
      */

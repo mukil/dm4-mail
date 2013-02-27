@@ -17,6 +17,7 @@ import de.deepamehta.core.RelatedTopic;
 import de.deepamehta.core.Topic;
 import de.deepamehta.core.service.ClientState;
 import de.deepamehta.core.service.DeepaMehtaService;
+import de.deepamehta.core.service.Directives;
 import de.deepamehta.core.storage.spi.DeepaMehtaTransaction;
 
 /**
@@ -130,8 +131,8 @@ public class Mail {
     public Topic setMessageId(String messageId) {
         DeepaMehtaTransaction tx = dms.beginTx();
         try {
-            topic.getCompositeValue().set(DATE, new Date().toString(), null, null);
-            topic.getCompositeValue().set(MESSAGE_ID, messageId, null, null);
+            topic.getCompositeValue().set(DATE, new Date().toString(), null, new Directives());
+            topic.getCompositeValue().set(MESSAGE_ID, messageId, null,  new Directives());
             tx.success();
         } finally {
             tx.finish();
