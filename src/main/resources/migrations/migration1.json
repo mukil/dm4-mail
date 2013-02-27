@@ -97,18 +97,18 @@
             label_config: [ "dm4.mail.signature.name" ],
             assoc_defs: [
                 {
-                    part_type_uri:   "dm4.mail.signature.name",
-                    part_cardinality_uri:  "dm4.core.one",
+                    child_type_uri:   "dm4.mail.signature.name",
+                    child_cardinality_uri:  "dm4.core.one",
                     assoc_type_uri:        "dm4.core.composition_def"
                 },
                 {
-                    part_type_uri:   "dm4.mail.from",
-                    part_cardinality_uri:  "dm4.core.one",
+                    child_type_uri:   "dm4.mail.from",
+                    child_cardinality_uri:  "dm4.core.one",
                     assoc_type_uri:        "dm4.core.composition_def"
                 },
                 {
-                    part_type_uri:   "dm4.mail.body",
-                    part_cardinality_uri:  "dm4.core.one",
+                    child_type_uri:   "dm4.mail.body",
+                    child_cardinality_uri:  "dm4.core.one",
                     assoc_type_uri:        "dm4.core.composition_def"
                 }
             ],
@@ -130,19 +130,19 @@
             label_config: [ "dm4.mail.subject" ],
             assoc_defs: [
                 {
-                    part_type_uri:   "dm4.mail.subject",
-                    part_cardinality_uri:  "dm4.core.one",
+                    child_type_uri:   "dm4.mail.subject",
+                    child_cardinality_uri:  "dm4.core.one",
                     assoc_type_uri:        "dm4.core.composition_def"
                 },
                 {
-                    part_type_uri:   "dm4.mail.from",
-                    part_cardinality_uri:  "dm4.core.one",
+                    child_type_uri:   "dm4.mail.from",
+                    child_cardinality_uri:  "dm4.core.one",
                     assoc_type_uri:        "dm4.core.composition_def"
                 },
                 {
-                    part_type_uri:   "dm4.mail.signature",
-                    part_cardinality_uri:  "dm4.core.many", # should be one
-                    whole_cardinality_uri: "dm4.core.many",
+                    child_type_uri:   "dm4.mail.signature",
+                    child_cardinality_uri:  "dm4.core.many", # should be one
+                    parent_cardinality_uri: "dm4.core.many",
                     assoc_type_uri:        "dm4.core.aggregation_def",
                     view_config_topics: [
                         { # use a many aggregation to inject a renderer that only supports one part
@@ -155,28 +155,28 @@
                     ]
                 },
                 {
-                    part_type_uri:   "dm4.mail.recipient.list",
-                    part_cardinality_uri:  "dm4.core.one",
+                    child_type_uri:   "dm4.mail.recipient.list",
+                    child_cardinality_uri:  "dm4.core.one",
                     assoc_type_uri:        "dm4.core.composition_def"
                 },
                 {
-                    part_type_uri:   "dm4.mail.body",
-                    part_cardinality_uri:  "dm4.core.one",
+                    child_type_uri:   "dm4.mail.body",
+                    child_cardinality_uri:  "dm4.core.one",
                     assoc_type_uri:        "dm4.core.composition_def"
                 },
                 {
-                    part_type_uri:   "dm4.mail.signature.preview",
-                    part_cardinality_uri:  "dm4.core.one",
+                    child_type_uri:   "dm4.mail.signature.preview",
+                    child_cardinality_uri:  "dm4.core.one",
                     assoc_type_uri:        "dm4.core.composition_def"
                 },
                 {
-                    part_type_uri:   "dm4.mail.date",
-                    part_cardinality_uri:  "dm4.core.one",
+                    child_type_uri:   "dm4.mail.date",
+                    child_cardinality_uri:  "dm4.core.one",
                     assoc_type_uri:        "dm4.core.composition_def"
                 },
                 {
-                    part_type_uri:   "dm4.mail.id",
-                    part_cardinality_uri:  "dm4.core.one",
+                    child_type_uri:   "dm4.mail.id",
+                    child_cardinality_uri:  "dm4.core.one",
                     assoc_type_uri:        "dm4.core.composition_def",
                     view_config_topics: [
                         { # hide the internal message ID
@@ -188,9 +188,9 @@
                     ]
                 },
                 {
-                    part_type_uri:   "dm4.files.file",
-                    part_cardinality_uri:  "dm4.core.many",
-                    whole_cardinality_uri: "dm4.core.many",
+                    child_type_uri:   "dm4.files.file",
+                    child_cardinality_uri:  "dm4.core.many",
+                    parent_cardinality_uri: "dm4.core.many",
                     assoc_type_uri:        "dm4.core.aggregation_def",
                     view_config_topics: [
                         {
@@ -225,9 +225,9 @@
             data_type_uri: "dm4.core.composite",
             assoc_defs: [
                 { # actual selected email address (direct recipient child)
-                    part_type_uri:         "dm4.contacts.email_address",
-                    part_cardinality_uri:  "dm4.core.one",
-                    whole_cardinality_uri: "dm4.core.one",
+                    child_type_uri:         "dm4.contacts.email_address",
+                    child_cardinality_uri:  "dm4.core.one",
+                    parent_cardinality_uri: "dm4.core.one",
                     assoc_type_uri:        "dm4.core.aggregation_def"
                 }
             ]
@@ -238,15 +238,15 @@
             data_type_uri: "dm4.core.composite",
             assoc_defs: [
                 { # type of this recipient
-                    part_type_uri:   "dm4.mail.recipient.type",
-                    part_cardinality_uri:  "dm4.core.one",
-                    whole_cardinality_uri: "dm4.core.one",
+                    child_type_uri:   "dm4.mail.recipient.type",
+                    child_cardinality_uri:  "dm4.core.one",
+                    parent_cardinality_uri: "dm4.core.one",
                     assoc_type_uri:        "dm4.core.aggregation_def"
                 },
                 { # actual selected email address (direct recipient child)
-                    part_type_uri:         "dm4.contacts.email_address",
-                    part_cardinality_uri:  "dm4.core.one",
-                    whole_cardinality_uri: "dm4.core.one",
+                    child_type_uri:         "dm4.contacts.email_address",
+                    child_cardinality_uri:  "dm4.core.one",
+                    parent_cardinality_uri: "dm4.core.one",
                     assoc_type_uri:        "dm4.core.aggregation_def"
                 }
             ]

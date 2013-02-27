@@ -7,8 +7,8 @@
   function getRecipient(childId, parentUri) {
     return dm4c.restc.get_topic_related_topics(childId, {
       assoc_type_uri: 'dm4.core.composition',
-      my_role_type_uri: 'dm4.core.part',
-      others_role_type_uri: 'dm4.core.whole',
+      my_role_type_uri: 'dm4.core.child',
+      others_role_type_uri: 'dm4.core.parent',
       others_topic_type_uri: parentUri
     }).items[0]
   }
@@ -16,8 +16,8 @@
   function getRecipientTopics(mailId) {
     return dm4c.restc.get_topic_related_topics(mailId, {
       assoc_type_uri: 'dm4.mail.recipient',
-      my_role_type_uri: 'dm4.core.whole',
-      others_role_type_uri: 'dm4.core.part'
+      my_role_type_uri: 'dm4.core.parent',
+      others_role_type_uri: 'dm4.core.child'
     }).items.sort(function (a, b) {
         return (a.value < b.value) ? -1 : (a.value > b.value) ? 1 : 0
     })

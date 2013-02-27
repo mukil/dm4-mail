@@ -62,15 +62,15 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
 
     public static final String COMPOSITION = "dm4.core.composition";
 
-    public static final String PART = "dm4.core.part";
+    public static final String PART = "dm4.core.child";
 
-    public static final String PART_TYPE = "dm4.core.part_type";
+    public static final String PART_TYPE = "dm4.core.child_type";
 
     public static final String TOPIC_TYPE = "dm4.core.topic_type";
 
-    public static final String WHOLE = "dm4.core.whole";
+    public static final String WHOLE = "dm4.core.parent";
 
-    public static final String WHOLE_TYPE = "dm4.core.whole_type";
+    public static final String WHOLE_TYPE = "dm4.core.parent_type";
 
     public static final String FILE = "dm4.files.file";
 
@@ -207,7 +207,7 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
 
     /**
      * Returns the parent of each search type substring match.
-     * 
+     *
      * @param term
      *            String to search.
      * @param cookie
@@ -229,7 +229,7 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
 
     /**
      * Creates a copy of the mail.
-     * 
+     *
      * @param mailId
      *            ID of the mail topic to clone.
      * @param includeRecipients
@@ -287,7 +287,7 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
 
     /**
      * Creates a new mail to all email addresses of the contact topic.
-     * 
+     *
      * @param recipientId
      *            ID of a recipient contact topic.
      * @param cookie
@@ -365,7 +365,7 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
 
     /**
      * Load the configuration.
-     * 
+     *
      * Useful after type and configuration changes with the web-client.
      */
     @GET
