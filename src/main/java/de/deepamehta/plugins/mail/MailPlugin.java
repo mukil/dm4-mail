@@ -565,7 +565,7 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
             String adminName = admin.getSimpleValue().toString();
             acService.setCreator(config.getId(), adminName);
             acService.setOwner(config.getId(), adminName);
-            acService.createACL(config.getId(), new AccessControlList( //
+            acService.setACL(config.getId(), new AccessControlList( //
                     new ACLEntry(Operation.WRITE, UserRole.OWNER)));
         }
     }
