@@ -1,10 +1,10 @@
 # DeepaMehta 4 Mail Plugin
 
-simple Mail plugin (only SMTP ;-()
+SMTP Mail plugin
 
 ## Requirements
 
-  * [DeepaMehta 4](http://github.com/jri/deepamehta) 4.1-SNAPSHOT
+  * [DeepaMehta 4](http://github.com/jri/deepamehta) 4.1
 
 ## Usage
 
