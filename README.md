@@ -4,7 +4,7 @@ SMTP Mail plugin
 
 ## Requirements
 
-  * [DeepaMehta 4](http://github.com/jri/deepamehta) 4.1
+  * [DeepaMehta 4](http://github.com/jri/deepamehta) 4.1.3-SNAPSHOT
 
 ## Usage
 
