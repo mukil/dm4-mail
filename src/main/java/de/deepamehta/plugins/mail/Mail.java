@@ -29,12 +29,9 @@ public class Mail {
 
     private final Topic topic;
 
-    private final ClientState clientState;
-
-    public Mail(long topicId, DeepaMehtaService dms, ClientState clientState) {
+    public Mail(long topicId, DeepaMehtaService dms) {
         this.dms = dms;
-        this.clientState = clientState;
-        this.topic = dms.getTopic(topicId, true, clientState);
+        this.topic = dms.getTopic(topicId, true);
     }
 
     public String getBody() throws Exception {
@@ -64,8 +61,7 @@ public class Mail {
         Set<String> invalid = new HashSet<String>();
         RecipientsByType results = new RecipientsByType();
 
-        for (RelatedTopic recipient : topic.getRelatedTopics(RECIPIENT,//
-                PARENT, CHILD, null, false, false, 0, null)) {
+        for (RelatedTopic recipient : topic.getRelatedTopics(RECIPIENT, PARENT, CHILD, null, false, false, 0)) {
             String personal = recipient.getSimpleValue().toString();
 
             for (Association association : dms.getAssociations(topic.getId(), recipient.getId())) {
@@ -75,7 +71,7 @@ public class Mail {
 
                 // get and validate recipient association
                 CompositeValue value = dms.getAssociation(association.getId(),//
-                        true, null).getCompositeValue(); // re-fetch with value
+                        true).getCompositeValue(); // re-fetch with value
                 if (value.has(RECIPIENT_TYPE) == false) {
                     invalid.add("Recipient type of \"" + personal + "\" is not defined");
                     continue;
@@ -103,7 +99,7 @@ public class Mail {
 
     public InternetAddress getSender() throws UnsupportedEncodingException, AddressException {
         RelatedTopic sender = topic.getRelatedTopic(SENDER,//
-                PARENT, CHILD, null, false, true, null);
+                PARENT, CHILD, null, false, true);
         if (sender == null) {
             throw new IllegalArgumentException("Contact required");
         }
@@ -142,8 +138,7 @@ public class Mail {
 
     public Set<Long> getAttachmentIds() {
         Set<Long> attachments = new HashSet<Long>();
-        for (RelatedTopic attachment : topic.getRelatedTopics(AGGREGATION,//
-                PARENT, CHILD, FILE, false, false, 0, clientState)) {
+        for (RelatedTopic attachment : topic.getRelatedTopics(AGGREGATION, PARENT, CHILD, FILE, false, false, 0)) {
             attachments.add(attachment.getId());
         }
         return attachments;

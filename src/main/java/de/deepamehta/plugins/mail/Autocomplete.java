@@ -50,7 +50,7 @@ public class Autocomplete {
         // search and hash parent results by ID (to overwrite duplicates)
         Map<Long, Topic> parents = new HashMap<Long, Topic>();
         for (String uri : config.getSearchTypeUris()) {
-            for (Topic topic : dms.searchTopics(query, uri, clientState)) {
+            for (Topic topic : dms.searchTopics(query, uri)) {
                 Topic parent = getParent(topic);
                 parents.put(parent.getId(), parent);
             }
@@ -59,14 +59,14 @@ public class Autocomplete {
         // get and hash addresses of each parent
         Map<Long, TopicModel> addresses = new HashMap<Long, TopicModel>();
         for (Topic result : parents.values()) {
-            Topic parent = dms.getTopic(result.getId(), true, clientState);
+            Topic parent = dms.getTopic(result.getId(), true);
             for (TopicModel address : getEmailAddresses(parent, clientState)) {
                 putAddress(addresses, parent, address);
             }
         }
 
         // search email directly afterwards and merge the results
-        Set<Topic> searchTopics = dms.searchTopics(query, EMAIL_ADDRESS, clientState);
+        Set<Topic> searchTopics = dms.searchTopics(query, EMAIL_ADDRESS);
         for (Topic address : searchTopics) {
             TopicModel model = address.getModel();
             if (addresses.containsKey(model.getId()) == false) {
@@ -101,7 +101,7 @@ public class Autocomplete {
     }
 
     private RelatedTopic getParent(Topic child) {
-        return child.getRelatedTopic(COMPOSITION, CHILD, PARENT, null, false, false, null);
+        return child.getRelatedTopic(COMPOSITION, CHILD, PARENT, null, false, false);
     }
 
     /**

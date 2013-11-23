@@ -82,7 +82,7 @@
     }
 
     var email = association.composite['dm4.contacts.email_address'],
-      $remove = dm4c.ui.button(onRemoveButtonClick, undefined, 'circle-minus'),
+      $remove = dm4c.ui.button({ on_click: onRemoveButtonClick, icon: 'circle-minus', is_submit: false }),
       $icon = dm4c.render.icon_link(recipient, click),
       $link = dm4c.render.topic_link(recipient, click),
       $rTypes = cloneAndSelectType($types, association),
@@ -101,10 +101,10 @@
     })
   }
 
-  function toogleWithFirstGet(label, onFirstShow) {
-    var $get = dm4c.ui.button(firstShow, label).css('display', 'inline-block'),
-      $hide = dm4c.ui.button(toggle, 'Hide').css('display', 'inline-block'),
-      $show = dm4c.ui.button(toggle, label).css('display', 'inline-block'),
+  function toggleWithFirstGet(label, onFirstShow) {
+    var $get = dm4c.ui.button({ on_click: firstShow, label: label, is_submit: false }).css('display', 'inline-block'),
+      $hide = dm4c.ui.button({ on_click: toggle, label: 'Hide', is_submit: false }).css('display', 'inline-block'),
+      $show = dm4c.ui.button({ on_click: toggle, label: label, is_submit: false }).css('display', 'inline-block'),
       $buttons = $('<div>').addClass('add-button').append($get),
       $div = $('<div>')
 
@@ -127,7 +127,7 @@
 
 
   function createRecipientListView(mailId) {
-    return toogleWithFirstGet('Show', function ($parent) {
+    return toggleWithFirstGet('Show', function ($parent) {
       $parent.append(dm4c.render.topic_list(getRecipientTopics(mailId)))
     })
   }
@@ -178,7 +178,7 @@
       if ($.isEmptyObject(pluginResults)) {
         $parent.append(createRecipientEditorList(mail.id))
       } else {
-        //$parent.append(toogleWithFirstGet('Edit', function ($div) {
+        //$parent.append(toggleWithFirstGet('Edit', function ($div) {
         //  $div.append(createRecipientEditorList(mail.id))
         //}))
       }

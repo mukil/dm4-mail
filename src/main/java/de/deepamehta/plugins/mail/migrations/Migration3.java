@@ -7,7 +7,7 @@ public class Migration3 extends Migration {
 
     @Override
     public void run() {
-        dms.getTopicType("dm4.accesscontrol.user_account", null)//
+        dms.getTopicType("dm4.accesscontrol.user_account")//
                 .addAssocDef(new AssociationDefinitionModel("dm4.core.composition_def",//
                         "dm4.accesscontrol.user_account", "dm4.mail.from",//
                         "dm4.core.many", "dm4.core.one"));

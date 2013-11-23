@@ -142,8 +142,8 @@ dm4c.add_plugin('dm4.mail.plugin', function () {
   this.createCompletionField = function (label, onSelect) {
     var $elem = $('<input>').hide().blur(cancel),
       lastTerm = '', // save last request term
-      $add = dm4c.ui.button(add, label).css('display', 'inline-block'),
-      $cancel = dm4c.ui.button(cancel, 'Cancel').css('display', 'inline-block'),
+      $add = dm4c.ui.button({ on_click: add, label: label, is_submit: false }).css('display', 'inline-block'),
+      $cancel = dm4c.ui.button({ on_click: cancel, label: 'Cancel', is_submit: false }).css('display', 'inline-block'),
       $div = $('<div>').addClass('add-button').append($elem).append($add).append($cancel)
 
     function add() {
@@ -181,11 +181,11 @@ dm4c.add_plugin('dm4.mail.plugin', function () {
     })
 
     // render items with highlighted label and type specific icon
-    $elem.data('autocomplete')._renderItem = function (ul, item) {
+    $elem.data('ui-autocomplete')._renderItem = function (ul, item) {
       var $img = dm4c.render.type_icon(item.type_uri).addClass('menu-icon'),
         $label = $('<span>').append(highlightTerm(item.value, lastTerm)),
         $a = $('<a>').append($img).append($label)
-      $('<li>').data('item.autocomplete', item).append($a).appendTo(ul)
+      return $('<li>').data('item.autocomplete', item).append($a).appendTo(ul)
     }
     $cancel.hide() // hide after insert to prevent block style
     return $div.addClass('completion')
