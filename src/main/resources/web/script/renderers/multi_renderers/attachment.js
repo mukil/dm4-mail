@@ -74,7 +74,7 @@
       $parent.parent().remove()
     }
 
-    var $remove = dm4c.ui.button({ on_click: remove, icon: 'circle-minus', is_submit: false })
+    var $remove = dm4c.ui.button({ on_click: remove, icon: 'circle-minus' })
     return $('<div>').addClass('remove-button').append($remove)
   }
 
@@ -97,7 +97,7 @@
       })
     }
 
-    return dm4c.ui.button({ on_click: add, icon: 'Add Attachments', is_submit: false })//.css('display', 'inline-block')
+    return dm4c.ui.button({ on_click: add, icon: 'Add Attachments' })//.css('display', 'inline-block')
   }
 
   dm4c.add_multi_renderer('dm4.mail.attachment.renderer', {

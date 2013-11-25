@@ -2,6 +2,10 @@
 
 (function ($, dm4c) {
 
+  function associate(mailId, addressId) {
+    return dm4c.restc.request('POST', '/mail/' + mailId + '/recipient/' + addressId)
+  }
+
   // --- REST getter ------------------------------------------------
 
   function getRecipient(childId, parentUri) {
@@ -36,10 +40,6 @@
     return dm4c.restc.request('GET', '/mail/recipient/types').items
   }
 
-  function associate(mailId, addressId) {
-    return dm4c.restc.request('POST', '/mail/' + mailId + '/recipient/' + addressId)
-  }
-
   // --- callbacks ---------------------------------------------------
 
   // delete recipient association and remove parent editor
@@ -51,10 +51,14 @@
 
   // update type of recipient association with selected value
   function onRecipientTypeSelect() {
-    var association = $(this).parent().data('recipient').association
+    var recipient = $(this).parent().data('recipient'),
+      association = recipient.association
+
     $('option:selected', $(this)).each(function () {
       association.composite['dm4.mail.recipient.type'] = 'ref_uri:' + $(this).val()
-      dm4c.do_update_association(association)
+      var directives = dm4c.do_update_association(association),
+        update = $.grep(directives, function (d) { return d.type === 'UPDATE_ASSOCIATION' })[0]
+      recipient.association = update.arg // reassign argument of update
     })
   }
 
@@ -62,7 +66,6 @@
 
   function createTypeSelector(types) {
     // TODO use render helper menu (core method needs a callback parameter)
-    var $select = $('<select>').attr('size', 1)
     var $select = $('<select>').attr('size', 1)
     $.each(types, function (id, type) {
       $select.append($('<option>').val(type.uri).text(type.value))
@@ -82,7 +85,7 @@
     }
 
     var email = association.composite['dm4.contacts.email_address'],
-      $remove = dm4c.ui.button({ on_click: onRemoveButtonClick, icon: 'circle-minus', is_submit: false }),
+      $remove = dm4c.ui.button({ on_click: onRemoveButtonClick, icon: 'circle-minus' }),
       $icon = dm4c.render.icon_link(recipient, click),
       $link = dm4c.render.topic_link(recipient, click),
       $rTypes = cloneAndSelectType($types, association),
@@ -102,9 +105,9 @@
   }
 
   function toggleWithFirstGet(label, onFirstShow) {
-    var $get = dm4c.ui.button({ on_click: firstShow, label: label, is_submit: false }).css('display', 'inline-block'),
-      $hide = dm4c.ui.button({ on_click: toggle, label: 'Hide', is_submit: false }).css('display', 'inline-block'),
-      $show = dm4c.ui.button({ on_click: toggle, label: label, is_submit: false }).css('display', 'inline-block'),
+    var $get = dm4c.ui.button({ on_click: firstShow, label: label }).css('display', 'inline-block'),
+      $hide = dm4c.ui.button({ on_click: toggle, label: 'Hide' }).css('display', 'inline-block'),
+      $show = dm4c.ui.button({ on_click: toggle, label: label }).css('display', 'inline-block'),
       $buttons = $('<div>').addClass('add-button').append($get),
       $div = $('<div>')
 
@@ -132,7 +135,7 @@
     })
   }
 
-  function createRecipientEditorList(mailId, $parent) {
+  function createRecipientEditorList(mailId) {
     var recipients = getRecipientTopics(mailId),
       types = dm4c.hash_by_id(getRecipientTypes()),
       $recipients = $('<div>'),

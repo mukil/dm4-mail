@@ -122,12 +122,11 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
      */
     @POST
     @Path("{mail}/recipient/{address}")
-    public Association mailRecipient(//
+    public Association associateRecipient(//
             @PathParam("mail") long mailId,//
             @PathParam("address") long addressId,//
-            @QueryParam("type") String type,//
             @HeaderParam("Cookie") ClientState cookie) {
-        return associateRecipient(mailId, addressId, config.checkRecipientType(type), cookie);
+        return associateRecipient(mailId, addressId, config.getDefaultRecipientType(), cookie);
     }
 
     @Override
