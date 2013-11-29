@@ -1,0 +1,381 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head profile="http://selenium-ide.openqa.org/profiles/test-case">
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<link rel="selenium.base" href="http://localhost:8080/" />
+<title>dm4-mail</title>
+</head>
+<body>
+<table cellpadding="1" cellspacing="1" border="1">
+<thead>
+<tr><td rowspan="1" colspan="3">dm4-mail</td></tr>
+</thead><tbody>
+<!--open webclient and login-->
+<tr>
+	<td>open</td>
+	<td>/de.deepamehta.webclient</td>
+	<td></td>
+</tr>
+<tr>
+	<td>waitForCondition</td>
+	<td>selenium.browserbot.getCurrentWindow().jQuery.active == 0</td>
+	<td>2000</td>
+</tr>
+<tr>
+	<td>waitForElementPresent</td>
+	<td>link=Login</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>link=Login</td>
+	<td></td>
+</tr>
+<tr>
+	<td>type</td>
+	<td>//div[@id='login-message']/../input</td>
+	<td>admin</td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>//div[@id='login-message']/../../div[last()]//button</td>
+	<td></td>
+</tr>
+<tr>
+	<td>waitForElementPresent</td>
+	<td>link=Logout</td>
+	<td></td>
+</tr>
+<tr>
+	<td>waitForNotVisible</td>
+	<td>//div[@id='login-message']/../..</td>
+	<td></td>
+</tr>
+<!--create person 'icke'-->
+<tr>
+	<td>click</td>
+	<td>//div[@id='create-widget']//span[text()='Create']</td>
+	<td></td>
+</tr>
+<tr>
+	<td>waitForVisible</td>
+	<td>link=Person</td>
+	<td></td>
+</tr>
+<tr>
+	<td>mouseUp</td>
+	<td>link=Person</td>
+	<td></td>
+</tr>
+<tr>
+	<td>waitForCondition</td>
+	<td>selenium.browserbot.getCurrentWindow().jQuery.active == 0</td>
+	<td>2000</td>
+</tr>
+<tr>
+	<td>waitForElementPresent</td>
+	<td>//div[@class='field-label' and text()='First Name']</td>
+	<td></td>
+</tr>
+<tr>
+	<td>type</td>
+	<td>//div[@class='field-label' and text()='First Name']/../input</td>
+	<td>icke</td>
+</tr>
+<tr>
+	<td>type</td>
+	<td>//div[@class='field-label' and text()='Email Address']/../input</td>
+	<td>icke@localhost</td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>//div[@id='page-toolbar']/button</td>
+	<td></td>
+</tr>
+<tr>
+	<td>waitForCondition</td>
+	<td>selenium.browserbot.getCurrentWindow().jQuery.active == 0</td>
+	<td>2000</td>
+</tr>
+<!--create and link signature-->
+<tr>
+	<td>click</td>
+	<td>//div[@id='create-widget']//span[text()='Create']</td>
+	<td></td>
+</tr>
+<tr>
+	<td>waitForVisible</td>
+	<td>link=Signature</td>
+	<td></td>
+</tr>
+<tr>
+	<td>mouseUp</td>
+	<td>link=Signature</td>
+	<td></td>
+</tr>
+<tr>
+	<td>waitForCondition</td>
+	<td>selenium.browserbot.getCurrentWindow().jQuery.active == 0</td>
+	<td>2000</td>
+</tr>
+<tr>
+	<td>waitForElementPresent</td>
+	<td>//div[@class='field-label' and text()='Name']</td>
+	<td></td>
+</tr>
+<tr>
+	<td>type</td>
+	<td>//div[@class='field-label' and text()='Name']/../input</td>
+	<td>mfg</td>
+</tr>
+<tr>
+	<td>waitForVisible</td>
+	<td>//span[@id='cke_field_/dm4.mail.body']//iframe</td>
+	<td></td>
+</tr>
+<tr>
+	<td>runScript</td>
+	<td>CKEDITOR.instances['field_/dm4.mail.body'].setData('Mit freundlichen Grüßen')</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>//span[@class='ui-button-text' and text()='Choose']</td>
+	<td></td>
+</tr>
+<tr>
+	<td>sendKeys</td>
+	<td>css=input.ui-autocomplete-input</td>
+	<td>icke</td>
+</tr>
+<tr>
+	<td>waitForCondition</td>
+	<td>selenium.browserbot.getCurrentWindow().jQuery.active == 0</td>
+	<td>2000</td>
+</tr>
+<tr>
+	<td>waitForElementPresent</td>
+	<td>//ul[contains(@class, 'ui-autocomplete')]/li/a</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>//ul[contains(@class, 'ui-autocomplete')]/li/a</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>//div[@id='page-toolbar']/button</td>
+	<td></td>
+</tr>
+<tr>
+	<td>waitForCondition</td>
+	<td>selenium.browserbot.getCurrentWindow().jQuery.active == 0</td>
+	<td>2000</td>
+</tr>
+<!--reveal sender of signature-->
+<tr>
+	<td>click</td>
+	<td>link=icke</td>
+	<td></td>
+</tr>
+<!--search and reveal plugin-->
+<tr>
+	<td>click</td>
+	<td>//div[@id='search-widget']/span/button</td>
+	<td></td>
+</tr>
+<tr>
+	<td>waitForVisible</td>
+	<td>link=By Type</td>
+	<td></td>
+</tr>
+<tr>
+	<td>mouseUp</td>
+	<td>link=By Type</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>//div[@id='search-widget']/span/span/button</td>
+	<td></td>
+</tr>
+<tr>
+	<td>mouseUp</td>
+	<td>link=Plugin</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>link=DeepaMehta 4 Mail</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>//div[@id='search-widget']/span/button</td>
+	<td></td>
+</tr>
+<tr>
+	<td>waitForVisible</td>
+	<td>link=By Text</td>
+	<td></td>
+</tr>
+<tr>
+	<td>mouseUp</td>
+	<td>link=By Text</td>
+	<td></td>
+</tr>
+<!--configure default sender-->
+<tr>
+	<td>click</td>
+	<td>link=Local Mail Configuration</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>//span[@class='ui-button-text' and text()='Edit']</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>//span[@class='ui-button-text' and text()='Choose']</td>
+	<td></td>
+</tr>
+<tr>
+	<td>sendKeys</td>
+	<td>css=input.ui-autocomplete-input</td>
+	<td>icke</td>
+</tr>
+<tr>
+	<td>waitForCondition</td>
+	<td>selenium.browserbot.getCurrentWindow().jQuery.active == 0</td>
+	<td>2000</td>
+</tr>
+<tr>
+	<td>waitForElementPresent</td>
+	<td>//ul[contains(@class, 'ui-autocomplete')]/li/a</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>//ul[contains(@class, 'ui-autocomplete')]/li/a</td>
+	<td></td>
+</tr>
+<tr>
+	<td>waitForCondition</td>
+	<td>selenium.browserbot.getCurrentWindow().jQuery.active == 0</td>
+	<td>2000</td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>//div[@id='page-toolbar']/button</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>link=icke</td>
+	<td></td>
+</tr>
+<!--create person 'er'-->
+<tr>
+	<td>click</td>
+	<td>//div[@id='create-widget']//span[text()='Create']</td>
+	<td></td>
+</tr>
+<tr>
+	<td>waitForVisible</td>
+	<td>link=Person</td>
+	<td></td>
+</tr>
+<tr>
+	<td>mouseUp</td>
+	<td>link=Person</td>
+	<td></td>
+</tr>
+<tr>
+	<td>waitForCondition</td>
+	<td>selenium.browserbot.getCurrentWindow().jQuery.active == 0</td>
+	<td>2000</td>
+</tr>
+<tr>
+	<td>waitForElementPresent</td>
+	<td>//div[@class='field-label' and text()='First Name']</td>
+	<td></td>
+</tr>
+<tr>
+	<td>type</td>
+	<td>//div[@class='field-label' and text()='First Name']/../input</td>
+	<td>er</td>
+</tr>
+<tr>
+	<td>type</td>
+	<td>//div[@class='field-label' and text()='Email Address']/../input</td>
+	<td>er@localhost</td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>//div[@id='page-toolbar']/button</td>
+	<td></td>
+</tr>
+<tr>
+	<td>waitForCondition</td>
+	<td>selenium.browserbot.getCurrentWindow().jQuery.active == 0</td>
+	<td>2000</td>
+</tr>
+<!--write mail from 'icke' to 'er'-->
+<tr>
+	<td>click</td>
+	<td>//div[@id='page-toolbar']/button/span[text()='Write Mail']</td>
+	<td></td>
+</tr>
+<tr>
+	<td>waitForElementPresent</td>
+	<td>//div[@class='field-label' and text()='Subject']</td>
+	<td></td>
+</tr>
+<tr>
+	<td>type</td>
+	<td>//div[@class='field-label' and text()='Subject']/../input</td>
+	<td>check this</td>
+</tr>
+<tr>
+	<td>waitForVisible</td>
+	<td>//span[@id='cke_field_/dm4.mail.body']//iframe</td>
+	<td></td>
+</tr>
+<tr>
+	<td>runScript</td>
+	<td>CKEDITOR.instances['field_/dm4.mail.body'].setData('mail test from DeepaMehta')</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>//div[@id='page-toolbar']/button/span[text()='OK']</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>link=icke</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>link=check this</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>link=mfg</td>
+	<td></td>
+</tr>
+<!--logout-->
+<tr>
+	<td>click</td>
+	<td>link=Logout</td>
+	<td></td>
+</tr>
+
+</tbody></table>
+</body>
+</html>
