@@ -15,7 +15,7 @@
                 {
                     type_uri: "dm4.webclient.view_config",
                     composite: {
-                        dm4.webclient.editable: false
+                        dm4.webclient.locked: true
                     }
                 }
             ]
@@ -42,7 +42,7 @@
                 {
                     type_uri: "dm4.webclient.view_config",
                     composite: {
-                        dm4.webclient.editable: false
+                        dm4.webclient.locked: true
                     }
                 }
             ]
@@ -117,8 +117,8 @@
                     type_uri: "dm4.webclient.view_config",
                     composite: {
                         dm4.webclient.icon: "/de.deepamehta.mail/images/signature.png",
-                        dm4.webclient.add_to_create_menu: true,
-                        dm4.webclient.is_searchable_unit: true
+                        dm4.webclient.show_in_create_menu: true,
+                        dm4.webclient.searchable_as_unit: true
                     }
                 }
             ]
@@ -144,11 +144,11 @@
                     child_cardinality_uri:  "dm4.core.many", # should be one
                     parent_cardinality_uri: "dm4.core.many",
                     assoc_type_uri:        "dm4.core.aggregation_def",
-                    view_config_topics: [
-                        { # use a many aggregation to inject a renderer that only supports one part
+                    view_config_topics: [ # composite does not support custom renderer,
+                        { # use a many aggregation to inject a renderer that only supports one child
                             type_uri: "dm4.webclient.view_config",
                             composite: {
-                                dm4.webclient.editable: true,
+                                dm4.webclient.locked: false,
                                 dm4.webclient.multi_renderer_uri: "dm4.mail.signature.renderer"
                             }
                         }
@@ -182,7 +182,7 @@
                         { # hide the internal message ID
                             type_uri: "dm4.webclient.view_config",
                             composite: {
-                                dm4.webclient.viewable: false
+                                dm4.webclient.hidden: true
                             }
                         }
                     ]
@@ -196,7 +196,7 @@
                         {
                             type_uri: "dm4.webclient.view_config",
                             composite: {
-                                dm4.webclient.editable: true,
+                                dm4.webclient.locked: false,
                                 dm4.webclient.multi_renderer_uri: "dm4.mail.attachment.renderer"
                             }
                         }
@@ -208,8 +208,8 @@
                     type_uri: "dm4.webclient.view_config",
                     composite: {
                         dm4.webclient.icon: "/de.deepamehta.mail/images/envelope.png",
-                        dm4.webclient.add_to_create_menu: true,
-                        dm4.webclient.is_searchable_unit: true
+                        dm4.webclient.show_in_create_menu: true,
+                        dm4.webclient.searchable_as_unit: true
                     }
                 }
             ]

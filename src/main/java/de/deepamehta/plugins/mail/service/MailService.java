@@ -3,6 +3,7 @@ package de.deepamehta.plugins.mail.service;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.Collection;
+import java.util.List;
 
 import org.apache.commons.mail.EmailException;
 
@@ -55,10 +56,19 @@ public interface MailService extends PluginService {
     Association associateSender(long topicId, long addressId, ClientState clientState);
 
     /**
-     * Sends a HTML mail.
+     * Associate all valid email addresses of each recipient.
      * 
      * @param mailId
-     *            ID of a mail topic.
+     * @param recipients
+     * @param clientState
+     */
+    void associateValidatedRecipients(long mailId, List<Topic> recipients, ClientState clientState);
+
+    /**
+     * Sends a HTML mail.
+     * 
+     * @param mail
+     *            Mail topic.
      * @return Sent mail topic.
      */
     StatusReport send(Mail mail) throws UnsupportedEncodingException, EmailException, IOException;
