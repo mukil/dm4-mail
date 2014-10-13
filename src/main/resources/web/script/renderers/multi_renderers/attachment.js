@@ -54,8 +54,8 @@
       dm4c.do_reveal_related_topic(file.id, 'show')
     }
 
-    var $icon = dm4c.render.icon_link(file, click),
-      $link = dm4c.render.topic_link(file, click)
+    var $icon = dm4c.render.icon_link(file, click)
+    var $link = dm4c.render.topic_link(file, click)
     return $('<div>').addClass('box').append($icon).append($link)
   }
 
@@ -87,11 +87,12 @@
    * @return {jQuery}
    */
   function createAddButton(attachments, $attachments) {
+
     function add() {
-      dm4c.get_plugin('de.deepamehta.files').open_upload_dialog('attachments', function (file) {
-        var attachment = dm4c.restc.get_topic_by_id(file.topic_id),
-          $attachment = createAttachmentLink(attachment, attachments)
-        $attachment.addClass('level1').append(createRemoveButton(attachment, attachments))
+      dm4c.get_plugin('de.deepamehta.files').open_upload_dialog('/files/attachments', function (response) {
+        var attachment = dm4c.restc.get_topic_by_id(response.topic_id)
+        var $attachment = createAttachmentLink(attachment, attachments)
+            $attachment.addClass('level1').append(createRemoveButton(attachment, attachments))
         $attachments.append($attachment)
         attachments.push(attachment)
       })
@@ -99,6 +100,10 @@
 
     return dm4c.ui.button({ on_click: add, icon: 'Add Attachments' })//.css('display', 'inline-block')
   }
+  
+  
+  
+  // --- Attachment Multi Renderer Implementation
 
   dm4c.add_multi_renderer('dm4.mail.attachment.renderer', {
 
@@ -113,16 +118,16 @@
 
     render_form: function (pages, $parent, level) {
 
-      var attachments = new TopicIdCache({}),
-        $attachments = $('<div>').addClass('box'),
-        $add = createAddButton(attachments, $attachments),
-        topic_renderer = dm4c.get_page_renderer('dm4.webclient.topic_renderer')
+      var attachments = new TopicIdCache({})
+      var $attachments = $('<div>').addClass('box')
+      var $add = createAddButton(attachments, $attachments)
+      // var topic_renderer = dm4c.get_page_renderer('dm4.webclient.topic_renderer')
 
       $.each(pages, function (p, page) {
         if (page.object.id !== -1) {
-          var attachment = page.object,
-            $attachment = createAttachmentLink(attachment, attachments)
-          $attachment.addClass('level1').append(createRemoveButton(attachment, attachments))
+          var attachment = page.object
+          var $attachment = createAttachmentLink(attachment, attachments)
+              $attachment.addClass('level1').append(createRemoveButton(attachment, attachments))
           attachments.push(attachment)
           $attachments.append($attachment)
         }
@@ -135,5 +140,7 @@
         return attachments.getValues()
       }
     }
+
   })
+
 }(jQuery, dm4c))

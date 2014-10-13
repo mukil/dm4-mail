@@ -36,7 +36,7 @@
 
     render_form: function (pages, $parent, level) {
       var deselectedId = -1,
-        selectedId = getSignatureIdOfMail(pages[0].toplevel_object),
+        selectedId = getSignatureIdOfMail(pages[0].parent.object),
         menu = createSignatureMenu(selectedId, function (signature) {
           // value contains a new selection?
           if (selectedId !== signature.value) {

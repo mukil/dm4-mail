@@ -66,7 +66,7 @@ public class Autocomplete {
         }
 
         // search email directly afterwards and merge the results
-        Set<Topic> searchTopics = dms.searchTopics(query, EMAIL_ADDRESS);
+        List<Topic> searchTopics = dms.searchTopics(query, EMAIL_ADDRESS);
         for (Topic address : searchTopics) {
             TopicModel model = address.getModel();
             if (addresses.containsKey(model.getId()) == false) {

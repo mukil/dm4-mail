@@ -28,15 +28,17 @@
   }
 
   function updateSenderView($topic, sender, association) {
+
     function click(event) {
       event.preventDefault()
       dm4c.page_panel.save()
       dm4c.do_reveal_related_topic(sender.id, 'show')
     }
 
-    var email = association.composite['dm4.contacts.email_address'],
-      $icon = dm4c.render.icon_link(sender, click),
-      $link = dm4c.render.topic_link(sender, click)
+    var email = association.composite['dm4.contacts.email_address']
+    var $icon = dm4c.render.icon_link(sender, click)
+    var $link = dm4c.render.topic_link(sender, click)
+    
     $topic.empty().append($icon).append($link)
     if (email && email.value) {
       $topic.append($('<span>').text('<' + email.value + '>')).removeClass('invalidContact')
@@ -49,16 +51,17 @@
   dm4c.add_simple_renderer('dm4.mail.sender.renderer', {
 
     render_info: function (model, $parent) {
-      var topic = model.toplevel_object,
-        sender = getSenderTopics(topic.id),
-        $sender = dm4c.render.topic_list(sender)
+      var topic = model.parent.object
+      var sender = getSenderTopics(topic.id)
+      var $sender = dm4c.render.topic_list(sender)
+      
       dm4c.render.field_label(model, $parent)
       $parent.append($sender)
     },
 
     render_form: function (model, $parent) {
-      var topic = model.toplevel_object,
-        $sender = $('<div>').addClass('sender box level1')
+      var topic = model.parent.object
+      var $sender = $('<div>').addClass('sender box level1')
 
       $.each(getSenderTopics(topic.id), function (s, sender) { // only one sender is supported
         updateSenderView($sender, sender, getSenderAssociation(topic.id, sender.id))
@@ -76,5 +79,7 @@
         return true // set dummy field after edit
       }
     }
+
   })
+
 }(jQuery, dm4c))

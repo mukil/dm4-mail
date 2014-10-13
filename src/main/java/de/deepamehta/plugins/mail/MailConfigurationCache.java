@@ -11,10 +11,10 @@ import java.util.Set;
 import java.util.logging.Logger;
 
 import de.deepamehta.core.RelatedTopic;
-import de.deepamehta.core.ResultSet;
 import de.deepamehta.core.Topic;
 import de.deepamehta.core.model.SimpleValue;
 import de.deepamehta.core.service.DeepaMehtaService;
+import de.deepamehta.core.service.ResultList;
 
 /**
  * Reveals and caches mail configuration parts.
@@ -39,13 +39,13 @@ class MailConfigurationCache {
 
     private final DeepaMehtaService dms;
 
-    private ResultSet<RelatedTopic> recipientTypes;
+    private ResultList<RelatedTopic> recipientTypes;
 
     private Set<String> recipientTypeUris;
 
     private Map<String, Topic> searchParentTypes;
 
-    private ResultSet<RelatedTopic> searchTypes;
+    private ResultList<RelatedTopic> searchTypes;
 
     private Set<String> searchTypeUris;
 
@@ -105,7 +105,7 @@ class MailConfigurationCache {
         return defaultSender;
     }
 
-    public ResultSet<RelatedTopic> getRecipientTypes() {
+    public ResultList<RelatedTopic> getRecipientTypes() {
         if (recipientTypes == null) {
             log.info("reveal recipient types");
             recipientTypes = dms.getTopics(RECIPIENT_TYPE, false, 0);
@@ -128,7 +128,7 @@ class MailConfigurationCache {
         return revealSearchParentTypes().values();
     }
 
-    public ResultSet<RelatedTopic> getSearchTypes() {
+    public ResultList<RelatedTopic> getSearchTypes() {
         if (searchTypes == null) {
             log.info("reveal search types");
             // get aggregated composite search types

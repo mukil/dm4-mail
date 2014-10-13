@@ -2,7 +2,6 @@ package de.deepamehta.plugins.mail;
 
 import java.io.File;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
@@ -28,7 +27,6 @@ import org.jsoup.nodes.Document;
 import de.deepamehta.core.Association;
 import de.deepamehta.core.CompositeValue;
 import de.deepamehta.core.RelatedTopic;
-import de.deepamehta.core.ResultSet;
 import de.deepamehta.core.Topic;
 import de.deepamehta.core.model.AssociationModel;
 import de.deepamehta.core.model.CompositeValueModel;
@@ -39,6 +37,7 @@ import de.deepamehta.core.osgi.PluginActivator;
 import de.deepamehta.core.service.ClientState;
 import de.deepamehta.core.service.Directives;
 import de.deepamehta.core.service.PluginService;
+import de.deepamehta.core.service.ResultList;
 import de.deepamehta.core.service.annotation.ConsumesService;
 import de.deepamehta.core.service.event.PostCreateTopicListener;
 import de.deepamehta.core.storage.spi.DeepaMehtaTransaction;
@@ -50,6 +49,7 @@ import de.deepamehta.plugins.accesscontrol.service.AccessControlService;
 import de.deepamehta.plugins.files.ResourceInfo;
 import de.deepamehta.plugins.files.service.FilesService;
 import de.deepamehta.plugins.mail.service.MailService;
+import java.util.ArrayList;
 
 @Path("/mail")
 @Produces(MediaType.APPLICATION_JSON)
@@ -60,59 +60,36 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
     // URI constants
 
     public static final String AGGREGATION = "dm4.core.aggregation";
-
     public static final String COMPOSITION = "dm4.core.composition";
-
     public static final String CHILD = "dm4.core.child";
-
     public static final String CHILD_TYPE = "dm4.core.child_type";
-
     public static final String TOPIC_TYPE = "dm4.core.topic_type";
-
     public static final String PARENT = "dm4.core.parent";
-
     public static final String PARENT_TYPE = "dm4.core.parent_type";
-
     public static final String FILE = "dm4.files.file";
-
     public static final String ATTACHMENTS = "attachments";
-
     public static final String BODY = "dm4.mail.body";
-
     public static final String EMAIL_ADDRESS = "dm4.contacts.email_address";
-
     public static final String DATE = "dm4.mail.date";
-
     public static final String FROM = "dm4.mail.from";
-
     public static final String MAIL = "dm4.mail";
-
     public static final String MESSAGE_ID = "dm4.mail.id";
-
     public static final String RECIPIENT = "dm4.mail.recipient";
-
     public static final String RECIPIENT_TYPE = "dm4.mail.recipient.type";
-
     public static final String SENDER = "dm4.mail.sender";
-
     public static final String SIGNATURE = "dm4.mail.signature";
-
     public static final String SUBJECT = "dm4.mail.subject";
-
     public static final String USER_ACCOUNT = "dm4.accesscontrol.user_account";
 
     // service references
 
     private AccessControlService acService;
-
     private FilesService fileService = null;
 
     // package internal helpers
 
     MailConfigurationCache config = null;
-
     ImageCidEmbedment cidEmbedment = null;
-
     Autocomplete autocomplete = null;
 
     boolean isInitialized;
@@ -329,7 +306,7 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
      */
     @GET
     @Path("/recipient/types")
-    public ResultSet<RelatedTopic> getRecipientTypes() {
+    public ResultList<RelatedTopic> getRecipientTypes() {
         return config.getRecipientTypes();
     }
 
@@ -338,9 +315,9 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
      */
     @GET
     @Path("/search/parents")
-    public ResultSet<Topic> listSearchParentTypes() {
+    public ResultList<Topic> listSearchParentTypes() {
         Collection<Topic> parents = getSearchParentTypes();
-        return new ResultSet<Topic>(parents.size(), new HashSet<Topic>(parents));
+        return new ResultList<Topic>(parents.size(), new ArrayList<Topic>(parents));
     }
 
     @Override
@@ -677,4 +654,5 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
         }
         report.addError(error, message);
     }
+
 }

@@ -76,6 +76,9 @@
                         <Embed-Dependency>jsoup,activation,mail,commons-email</Embed-Dependency>
                         <!-- optional include - JAF searches in class loader space if not exist -->
                         <Import-Package>sun.security.util;resolution:=optional,*</Import-Package>
+                        <Bundle-SymbolicName>
+                            de.deepamehta.mail
+                        </Bundle-SymbolicName>
                         <Bundle-Activator>
                             de.deepamehta.plugins.mail.MailPlugin
                         </Bundle-Activator>

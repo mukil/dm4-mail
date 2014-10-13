@@ -6,6 +6,8 @@
     return dm4c.restc.request('POST', '/mail/' + mailId + '/recipient/' + addressId)
   }
 
+
+
   // --- REST getter ------------------------------------------------
 
   function getRecipient(childId, parentUri) {
@@ -28,8 +30,9 @@
   }
 
   function getRecipientAssociations(mailId, recipientId) {
-    var recipients = [],
-      assocs = dm4c.restc.get_associations(mailId, recipientId, 'dm4.mail.recipient')
+    var recipients = []
+    var assocs = dm4c.restc.get_associations(mailId, recipientId, 'dm4.mail.recipient')
+    
     $.each(assocs, function(a, assoc) {
         recipients.push(dm4c.restc.get_association_by_id(assoc.id, true))
     })
@@ -40,27 +43,32 @@
     return dm4c.restc.request('GET', '/mail/recipient/types').items
   }
 
+
+
   // --- callbacks ---------------------------------------------------
 
   // delete recipient association and remove parent editor
   function onRemoveButtonClick() {
     var association = $(this).parent().parent().data('recipient').association
+    
     dm4c.do_delete_association(association)
     $(this).parent().parent().remove()
   }
 
   // update type of recipient association with selected value
   function onRecipientTypeSelect() {
-    var recipient = $(this).parent().data('recipient'),
-      association = recipient.association
+    var recipient = $(this).parent().data('recipient')
+    var association = recipient.association
 
     $('option:selected', $(this)).each(function () {
       association.composite['dm4.mail.recipient.type'] = 'ref_uri:' + $(this).val()
-      var directives = dm4c.do_update_association(association),
-        update = $.grep(directives, function (d) { return d.type === 'UPDATE_ASSOCIATION' })[0]
+      var directives = dm4c.do_update_association(association)
+      var update = $.grep(directives, function (d) { return d.type === 'UPDATE_ASSOCIATION' })[0]
       recipient.association = update.arg // reassign argument of update
     })
   }
+
+
 
   // --- jQuery factory methods --------------------------------------
 
@@ -84,12 +92,12 @@
       dm4c.do_reveal_related_topic(recipient.id, 'show')
     }
 
-    var email = association.composite['dm4.contacts.email_address'],
-      $remove = dm4c.ui.button({ on_click: onRemoveButtonClick, icon: 'circle-minus' }),
-      $icon = dm4c.render.icon_link(recipient, click),
-      $link = dm4c.render.topic_link(recipient, click),
-      $rTypes = cloneAndSelectType($types, association),
-      $recipient = $('<div>').append($rTypes).append($icon).append($link)
+    var email = association.composite['dm4.contacts.email_address']
+    var $remove = dm4c.ui.button({ on_click: onRemoveButtonClick, icon: 'circle-minus' })
+    var $icon = dm4c.render.icon_link(recipient, click)
+    var $link = dm4c.render.topic_link(recipient, click)
+    var $rTypes = cloneAndSelectType($types, association)
+    var $recipient = $('<div>').append($rTypes).append($icon).append($link)
 
     if (email && email.value) {
       $recipient.append($('<span>').text('<' + email.value + '>')).removeClass('invalidContact')
@@ -105,11 +113,11 @@
   }
 
   function toggleWithFirstGet(label, onFirstShow) {
-    var $get = dm4c.ui.button({ on_click: firstShow, label: label }).css('display', 'inline-block'),
-      $hide = dm4c.ui.button({ on_click: toggle, label: 'Hide' }).css('display', 'inline-block'),
-      $show = dm4c.ui.button({ on_click: toggle, label: label }).css('display', 'inline-block'),
-      $buttons = $('<div>').addClass('add-button').append($get),
-      $div = $('<div>')
+    var $get = dm4c.ui.button({ on_click: firstShow, label: label }).css('display', 'inline-block')
+    var $hide = dm4c.ui.button({ on_click: toggle, label: 'Hide' }).css('display', 'inline-block')
+    var $show = dm4c.ui.button({ on_click: toggle, label: label }).css('display', 'inline-block')
+    var $buttons = $('<div>').addClass('add-button').append($get)
+    var $div = $('<div>')
 
     function firstShow() {
       onFirstShow($div)
@@ -136,17 +144,18 @@
   }
 
   function createRecipientEditorList(mailId) {
-    var recipients = getRecipientTopics(mailId),
-      types = dm4c.hash_by_id(getRecipientTypes()),
-      $recipients = $('<div>'),
-      $types = createTypeSelector(types),
-      $add = dm4c.get_plugin('dm4.mail.plugin')
+    var recipients = getRecipientTopics(mailId)
+    var types = dm4c.hash_by_id(getRecipientTypes())
+    var $recipients = $('<div>')
+    var $types = createTypeSelector(types)
+    var $add = dm4c.get_plugin('dm4.mail.plugin')
         .createCompletionField('Add', function ($item, item) {
           var association = associate(mailId, item.id),
             recipient = getRecipient(item.id, item.type_uri)
           $recipients.append(createRecipientEditor(recipient, association, $types))
           // TODO show but not focus the created association
         })
+
     $.each(recipients, function (i, recipient) {
       $.each(getRecipientAssociations(mailId, recipient.id), function(a, association) {
           $recipients.append(createRecipientEditor(recipient, association, $types))
@@ -155,13 +164,18 @@
     $recipients.on('change', 'select', onRecipientTypeSelect)
     return $('<div>').append($recipients).append($add)
   }
+  
+  
+  
+  // --- Recipient Simple Renderer Implementation ---------------------
 
   dm4c.add_simple_renderer('dm4.mail.recipient.renderer', {
 
     render_info: function (model, $parent) {
       dm4c.render.field_label(model, $parent)
-      var mail = model.toplevel_object,
-        pluginResults = dm4c.fire_event('render_mail_recipients', mail)
+      var mail = model.parent.object
+      var pluginResults = dm4c.fire_event('render_mail_recipients', mail)
+      
       $.each(pluginResults, function (r, $info) {
         $parent.append($info)
       })
@@ -173,8 +187,9 @@
     },
 
     render_form: function (model, $parent) {
-      var mail = model.toplevel_object,
-        pluginResults = dm4c.fire_event('render_mail_recipients')
+      var mail = model.parent.object
+      var pluginResults = dm4c.fire_event('render_mail_recipients')
+      
       $.each(pluginResults, function (r, $info) {
         $parent.append($info)
       })
@@ -190,5 +205,7 @@
         return $.isEmptyObject(pluginResults) ? true : false // set dummy field after edit
       }
     }
+
   })
+
 }(jQuery, dm4c))
