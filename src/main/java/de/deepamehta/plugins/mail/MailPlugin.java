@@ -110,7 +110,7 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
     public Association associateRecipient(long mailId, long addressId, RecipientType type, ClientState clientState) {
         log.info("associate " + mailId + " with recipient address " + addressId);
 
-        // create value of the recipient association
+        // create value of the recipient association (#593 ref?)
         CompositeValueModel value = new CompositeValueModel()//
                 .putRef(RECIPIENT_TYPE, type.getUri())//
                 .putRef(EMAIL_ADDRESS, addressId);
@@ -165,7 +165,7 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
     public Association associateSender(long mailId, long addressId, ClientState clientState) {
         log.info("associate " + mailId + " with sender " + addressId);
 
-        // create value of sender association
+        // create value of sender association (#593 ref?)
         CompositeValueModel value = new CompositeValueModel().putRef(EMAIL_ADDRESS, addressId);
 
         // find existing sender association
@@ -236,7 +236,8 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
             Topic clone = dms.createTopic(model, cookie);
 
             // copy sender association
-            RelatedTopic sender = getSender(mail, true);
+            RelatedTopic sender = getSender(mail, true); 
+            // #593 ref?
             associateSender(clone.getId(), sender, sender.getRelatingAssociation()//
                     .getCompositeValue().getModel(), cookie);
 
@@ -249,6 +250,7 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
                         if (association.getTypeUri().equals(RECIPIENT) == false) {
                             continue; // sender or something else found
                         }
+                        // #593 ref?
                         CompositeValue value = dms.getAssociation(association.getId(), true).getCompositeValue();
                         associateRecipient(clone.getId(), recipient, value.getModel(), cookie);
                     }
@@ -377,6 +379,7 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
 
         try {
             InternetAddress sender = mail.getSender();
+            // ..) Set Senders of Mail
             email.setFrom(sender.getAddress(), sender.getPersonal());
         } catch (Exception e) {
             reportException(statusReport, Level.INFO, MailError.SENDER, e);
@@ -387,6 +390,7 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
             if (subject.isEmpty()) { // caught immediately
                 throw new IllegalArgumentException("Subject of mail is empty");
             }
+            // ..) Set Subject of Mail
             email.setSubject(subject);
         } catch (Exception e) {
             reportException(statusReport, Level.INFO, MailError.CONTENT, e);
@@ -398,6 +402,7 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
             if (text.isEmpty()) { // caught immediately
                 throw new IllegalArgumentException("Text body of mail is empty");
             }
+            // ..) Set Message Body
             email.setTextMsg(text);
             email.setHtmlMsg(body.html());
         } catch (Exception e) {
@@ -410,6 +415,7 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
                 EmailAttachment attachment = new EmailAttachment();
                 attachment.setPath(path);
                 log.fine("attach " + path);
+                // ..) Attach Attachmentss
                 email.attach(attachment);
             } catch (Exception e) {
                 reportException(statusReport, Level.INFO, MailError.ATTACHMENTS, e);
@@ -420,6 +426,7 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
         try {
             recipients = mail.getRecipients();
             try {
+                // ..) Mapping Recipients
                 mapRecipients(email, recipients);
             } catch (Exception e) {
                 reportException(statusReport, Level.SEVERE, MailError.RECIPIENT_TYPE, e);
@@ -556,12 +563,27 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
         if (sender != null) {
             DeepaMehtaTransaction tx = dms.beginTx();
             try {
-                CompositeValueModel value = sender.getRelatingAssociation()//
-                        .getCompositeValue().getModel();
+                // ..) what is fetched here: the model of an association associated to AssocType sender?
+                //     that would be an "E-Mail Address"-Value (being aggregated to a "Sender"-AssocType)
+                CompositeValueModel value = sender.getRelatingAssociation().getCompositeValue().getModel();
+                //     making: associateSender(MailTopic, SenderTopic, E-Mail Address Value)?
                 associateSender(mail.getId(), sender, value, clientState);
+                // 
                 long addressId = value.getTopic(EMAIL_ADDRESS).getId();
+                // ..) fetches (some topic being parent) related to "Sender"-Topic (most probably a signature topic )
                 RelatedTopic signature = getContactSignature(sender, addressId);
                 if (signature != null) {
+                    // ### do we want to re-use or duplicate the signatures child topics ?
+                    // ..) add a reference to the senders "Signature" to sent "Mail"
+                    /** CompositeValueModel signatureModel = new CompositeValueModel();
+                    signatureModel.add("dm4.mail.signature.name", signature.getModel()
+                        .getCompositeValueModel().getTopic("dm4.mail.signature.name"));
+                    signatureModel.add("dm4.mail.from", signature.getModel()
+                        .getCompositeValueModel().getTopic("dm4.mail.from"));
+                    signatureModel.add("dm4.mail.body", signature.getModel()
+                        .getCompositeValueModel().getTopic("dm4.mail.body"));
+                    TopicModel signatureCopy = new TopicModel(SIGNATURE, signatureModel);
+                    log.info("DEBUG: Copied Signature: " + signature.getModel().toJSON()); **/
                     mail.getCompositeValue().getModel().add(SIGNATURE, signature.getModel());
                 }
                 tx.success();
@@ -588,6 +610,7 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
         return dms.getTopic(addressId, false).getRelatedTopic(COMPOSITION, CHILD, PARENT, null, false, false);
     }
 
+    /** Comparing contact-signatures by "E-Mail Address"-Topic ID*/
     private RelatedTopic getContactSignature(Topic topic, long addressId) {
         for (RelatedTopic signature : topic.getRelatedTopics(SENDER, CHILD, PARENT, SIGNATURE, true, true, 0)) {
             CompositeValue value = signature.getRelatingAssociation().getCompositeValue();

@@ -41,6 +41,7 @@
   dm4c.add_simple_renderer('dm4.mail.signature.preview', {
 
     render_info: function (model, $parent) {
+      // ### is dummy field (can just be rendered part of its parent object)
       addSignatureOfMail(model.parent.object, $parent)
     },
 
