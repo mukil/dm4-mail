@@ -49,7 +49,7 @@
 
   // delete recipient association and remove parent editor
   function onRemoveButtonClick() {
-    var association = $(this).parent().parent().data('recipient').association
+    var association = $(this).parent().parent().data('recipient').association.id
     
     dm4c.do_delete_association(association)
     $(this).parent().parent().remove()
