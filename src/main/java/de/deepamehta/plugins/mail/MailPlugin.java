@@ -623,10 +623,12 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
 
     private Association getRecipientAssociation(long topicId, long addressId, long recipientId) {
         for (Association recipient : dms.getAssociations(topicId, recipientId)) {
-            Association association = dms.getAssociation(recipient.getId(), true);
-            Topic address = association.getCompositeValue().getTopic(EMAIL_ADDRESS);
-            if (association.getTypeUri().equals(RECIPIENT) && address.getId() == addressId) {
-                return association;
+            if (recipient.getTypeUri().equals(RECIPIENT)) {
+                Association association = dms.getAssociation(recipient.getId(), true);
+                Topic address = association.getCompositeValue().getTopic(EMAIL_ADDRESS);
+                if (address.getId() == addressId) {
+                    return association;
+                }                
             }
         }
         return null;
