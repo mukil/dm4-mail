@@ -4,7 +4,7 @@ SMTP Mail plugin
 
 ## Requirements
 
-  * [DeepaMehta 4](http://github.com/jri/deepamehta) 4.3
+  * [DeepaMehta 4](http://github.com/jri/deepamehta) 4.4
 
 ## Usage
 
@@ -50,6 +50,10 @@ of the underlying jQuery UI component
 ![write mail](https://github.com/dgf/dm4-mail/raw/master/doc/mail.png)
 
 ### Release History
+
+0.3.0, Upcoming
+
+* DeepaMehta 4.4 compatible
 
 0.2.1, Dec 07, 2014
 
