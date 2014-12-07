@@ -86,7 +86,7 @@ dm4c.add_plugin('dm4.mail.plugin', function () {
     var commands = []
     if (topic.type_uri === 'dm4.mail') {
       commands.push({is_separator: true, context: 'context-menu'})
-      if (topic.composite['dm4.mail.date'] && topic.composite['dm4.mail.date'].value) {
+      if (topic.childs['dm4.mail.date'] && topic.childs['dm4.mail.date'].value) {
         commands.push({
           label: 'Send Again',
           handler: copyMail,

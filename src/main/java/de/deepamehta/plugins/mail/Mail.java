@@ -12,11 +12,10 @@ import javax.mail.internet.AddressException;
 import javax.mail.internet.InternetAddress;
 
 import de.deepamehta.core.Association;
-import de.deepamehta.core.CompositeValue;
+import de.deepamehta.core.ChildTopics;
 import de.deepamehta.core.RelatedTopic;
 import de.deepamehta.core.Topic;
 import de.deepamehta.core.service.DeepaMehtaService;
-import de.deepamehta.core.service.Directives;
 import de.deepamehta.core.storage.spi.DeepaMehtaTransaction;
 
 /**
@@ -30,20 +29,20 @@ public class Mail {
 
     public Mail(long topicId, DeepaMehtaService dms) {
         this.dms = dms;
-        this.topic = dms.getTopic(topicId, true);
+        this.topic = dms.getTopic(topicId).loadChildTopics();
     }
 
     public String getBody() throws Exception {
-        String body = topic.getCompositeValue().getTopic(BODY).getSimpleValue().toString();
+        String body = topic.getChildTopics().getTopic(BODY).getSimpleValue().toString();
         if (body.isEmpty()) {
             throw new IllegalArgumentException("Body of mail is empty");
         }
 
-        if (topic.getCompositeValue().has(SIGNATURE) == false) {
+        if (topic.getChildTopics().has(SIGNATURE) == false) {
             throw new IllegalArgumentException("Signature of mail not found");
         } else {
-            List<Topic> signature = topic.getCompositeValue().getTopics(SIGNATURE);
-            CompositeValue value = signature.get(0).getCompositeValue();
+            List<Topic> signature = topic.getChildTopics().getTopics(SIGNATURE);
+            ChildTopics value = signature.get(0).getChildTopics();
             if (value.has(BODY) == false) {
                 throw new IllegalArgumentException("Signature of mail is empty");
             } else {
@@ -60,7 +59,7 @@ public class Mail {
         Set<String> invalid = new HashSet<String>();
         RecipientsByType results = new RecipientsByType();
 
-        for (RelatedTopic recipient : topic.getRelatedTopics(RECIPIENT, PARENT, CHILD, null, false, false, 0)) {
+        for (RelatedTopic recipient : topic.getRelatedTopics(RECIPIENT, PARENT, CHILD, null, 0)) {
             String personal = recipient.getSimpleValue().toString();
 
             for (Association association : dms.getAssociations(topic.getId(), recipient.getId())) {
@@ -69,8 +68,8 @@ public class Mail {
                 }
 
                 // get and validate recipient association
-                CompositeValue value = dms.getAssociation(association.getId(),//
-                        true).getCompositeValue(); // re-fetch with value
+                ChildTopics value = dms.getAssociation(association.getId())
+                    .loadChildTopics().getChildTopics(); // re-fetch with value
                 if (value.has(RECIPIENT_TYPE) == false) {
                     invalid.add("Recipient type of \"" + personal + "\" is not defined");
                     continue;
@@ -97,15 +96,15 @@ public class Mail {
     }
 
     public InternetAddress getSender() throws UnsupportedEncodingException, AddressException {
-        RelatedTopic sender = topic.getRelatedTopic(SENDER,//
-                PARENT, CHILD, null, false, true);
+        RelatedTopic sender = topic.getRelatedTopic(SENDER, PARENT, CHILD, null);
+        // sender had fetchRelatingComposite=true
         if (sender == null) {
             throw new IllegalArgumentException("Contact required");
         }
         String personal = sender.getSimpleValue().toString();
         String address;
         try { // throws runtime access
-            address = sender.getRelatingAssociation().getCompositeValue()//
+            address = sender.getRelatingAssociation().getChildTopics()//
                     .getTopic(EMAIL_ADDRESS).getSimpleValue().toString();
         } catch (Exception e) {
             throw new IllegalArgumentException("Contact has no email address");
@@ -116,7 +115,7 @@ public class Mail {
     }
 
     public String getSubject() {
-        return topic.getCompositeValue().getTopic(SUBJECT).getSimpleValue().toString();
+        return topic.getChildTopics().getTopic(SUBJECT).getSimpleValue().toString();
     }
 
     public Topic getTopic() {
@@ -126,8 +125,8 @@ public class Mail {
     public Topic setMessageId(String messageId) {
         DeepaMehtaTransaction tx = dms.beginTx();
         try {
-            topic.getCompositeValue().set(DATE, new Date().toString(), null, new Directives());
-            topic.getCompositeValue().set(MESSAGE_ID, messageId, null,  new Directives());
+            topic.getChildTopics().set(DATE, new Date().toString());
+            topic.getChildTopics().set(MESSAGE_ID, messageId);
             tx.success();
         } finally {
             tx.finish();
@@ -137,7 +136,7 @@ public class Mail {
 
     public Set<Long> getAttachmentIds() {
         Set<Long> attachments = new HashSet<Long>();
-        for (RelatedTopic attachment : topic.getRelatedTopics(AGGREGATION, PARENT, CHILD, FILE, false, false, 0)) {
+        for (RelatedTopic attachment : topic.getRelatedTopics(AGGREGATION, PARENT, CHILD, FILE, 0)) {
             attachments.add(attachment.getId());
         }
         return attachments;

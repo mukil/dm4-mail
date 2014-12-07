@@ -9,7 +9,7 @@
             view_config_topics: [
                 {
                     type_uri: "dm4.webclient.view_config",
-                    composite: {
+                    childs: {
                         dm4.webclient.simple_renderer_uri: "dm4.webclient.title_renderer"
                     }
                 }
@@ -62,7 +62,7 @@
             view_config_topics: [
                 {
                     type_uri: "dm4.webclient.view_config",
-                    composite: {
+                    childs: {
                         dm4.webclient.icon: "/de.deepamehta.mail/images/configure.png",
                         dm4.webclient.searchable_as_unit: true
                     }
@@ -74,7 +74,7 @@
         { # create a local configuration and link contact label types
             uri: "dm4.mail.config",
             type_uri: "dm4.mail.config.type",
-            composite: {
+            childs: {
                 dm4.mail.config.name: "Local Mail Configuration",
                 dm4.mail.config.host: "localhost",
                 dm4.mail.recipient.type: "ref_uri:dm4.mail.recipient.to",

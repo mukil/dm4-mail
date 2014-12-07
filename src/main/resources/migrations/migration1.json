@@ -14,7 +14,7 @@
             view_config_topics: [
                 {
                     type_uri: "dm4.webclient.view_config",
-                    composite: {
+                    childs: {
                         dm4.webclient.locked: true
                     }
                 }
@@ -27,7 +27,7 @@
             view_config_topics: [
                 { # dummy field to hold the renderer, that directly creates the sender association
                     type_uri: "dm4.webclient.view_config",
-                    composite: {
+                    childs: {
                         dm4.webclient.simple_renderer_uri: "dm4.mail.sender.renderer"
                     }
                 }
@@ -41,7 +41,7 @@
             view_config_topics: [
                 {
                     type_uri: "dm4.webclient.view_config",
-                    composite: {
+                    childs: {
                         dm4.webclient.locked: true
                     }
                 }
@@ -54,7 +54,7 @@
             view_config_topics: [
                 { # dummy field to hold the renderer, that directly creates recipient associations
                     type_uri: "dm4.webclient.view_config",
-                    composite: {
+                    childs: {
                         dm4.webclient.simple_renderer_uri: "dm4.mail.recipient.renderer"
                     }
                 }
@@ -84,7 +84,7 @@
             view_config_topics: [
                 { # dummy field to hold the renderer, that previews the chosen signature body
                     type_uri: "dm4.webclient.view_config",
-                    composite: {
+                    childs: {
                         dm4.webclient.simple_renderer_uri: "dm4.mail.signature.preview"
                     }
                 }
@@ -115,7 +115,7 @@
             view_config_topics: [
                 {
                     type_uri: "dm4.webclient.view_config",
-                    composite: {
+                    childs: {
                         dm4.webclient.icon: "/de.deepamehta.mail/images/signature.png",
                         dm4.webclient.show_in_create_menu: true,
                         dm4.webclient.searchable_as_unit: true
@@ -147,7 +147,7 @@
                     view_config_topics: [ # composite does not support custom renderer,
                         { # use a many aggregation to inject a renderer that only supports one child
                             type_uri: "dm4.webclient.view_config",
-                            composite: {
+                            childs: {
                                 dm4.webclient.locked: false,
                                 dm4.webclient.multi_renderer_uri: "dm4.mail.signature.renderer"
                             }
@@ -181,7 +181,7 @@
                     view_config_topics: [
                         { # hide the internal message ID
                             type_uri: "dm4.webclient.view_config",
-                            composite: {
+                            childs: {
                                 dm4.webclient.hidden: true
                             }
                         }
@@ -195,7 +195,7 @@
                     view_config_topics: [
                         {
                             type_uri: "dm4.webclient.view_config",
-                            composite: {
+                            childs: {
                                 dm4.webclient.locked: false,
                                 dm4.webclient.multi_renderer_uri: "dm4.mail.attachment.renderer"
                             }
@@ -206,7 +206,7 @@
             view_config_topics: [
                 {
                     type_uri: "dm4.webclient.view_config",
-                    composite: {
+                    childs: {
                         dm4.webclient.icon: "/de.deepamehta.mail/images/envelope.png",
                         dm4.webclient.show_in_create_menu: true,
                         dm4.webclient.searchable_as_unit: true

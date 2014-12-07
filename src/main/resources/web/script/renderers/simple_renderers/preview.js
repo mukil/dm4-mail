@@ -10,8 +10,8 @@
   }
 
   function getSignatureBody(signature) {
-    if (signature && signature.composite['dm4.mail.body']) {
-      return signature.composite['dm4.mail.body'].value || 'empty signature'
+    if (signature && signature.childs['dm4.mail.body']) {
+      return signature.childs['dm4.mail.body'].value || 'empty signature'
     } else {
       return 'invalid signature topic selected' // invalid signature
     }
@@ -19,9 +19,9 @@
 
   function addSignatureOfMail(mail, $parent) {
     var $signature = $('<div>').addClass('signature')
-    var signatures = mail.composite['dm4.mail.signature']
+    var signatures = mail.childs['dm4.mail.signature']
     if (signatures && signatures.length === 1) {
-        // FIXME recursive composite fetch after save action needed
+        // FIXME recursive childs fetch after save action needed
         var signature = getSignature(signatures[0].id)
         $signature.html(getSignatureBody(signature))
     }

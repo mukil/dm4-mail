@@ -20,7 +20,7 @@
 
   function getSenderAssociation(topicId, senderId) {
     return dm4c.restc.get_association('dm4.mail.sender',
-      topicId, senderId, 'dm4.core.parent', 'dm4.core.child')
+      topicId, senderId, 'dm4.core.parent', 'dm4.core.child', true)
   }
 
   function changeSender(topicId, addressId) {
@@ -35,7 +35,7 @@
       dm4c.do_reveal_related_topic(sender.id, 'show')
     }
 
-    var email = association.composite['dm4.contacts.email_address']
+    var email = association.childs['dm4.contacts.email_address']
     var $icon = dm4c.render.icon_link(sender, click)
     var $link = dm4c.render.topic_link(sender, click)
     

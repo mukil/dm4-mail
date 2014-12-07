@@ -6,7 +6,7 @@
   }
 
   function getSignatureIdOfMail(mail) {
-    var signatures = mail.composite['dm4.mail.signature']
+    var signatures = mail.childs['dm4.mail.signature']
     if (signatures && signatures.length === 1) {
         return signatures[0].id // the first one
     } else {

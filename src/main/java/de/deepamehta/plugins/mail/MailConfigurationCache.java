@@ -76,7 +76,7 @@ class MailConfigurationCache {
     private Topic getConfiguration() {
         if (config == null) {
             log.info("reveal mail plugin configuration");
-            config = dms.getTopic("uri", new SimpleValue(MAIL_CONFIG), true);
+            config = dms.getTopic("uri", new SimpleValue(MAIL_CONFIG)).loadChildTopics();
         }
         return config;
     }
@@ -88,7 +88,7 @@ class MailConfigurationCache {
     public RecipientType getDefaultRecipientType() {
         if (defaultRecipientType == null) {
             log.info("reveal default recipient type");
-            Topic type = getConfiguration().getCompositeValue().getTopic(RECIPIENT_TYPE);
+            Topic type = getConfiguration().getChildTopics().getTopic(RECIPIENT_TYPE);
             defaultRecipientType = RecipientType.fromUri(type.getUri());
         }
         return defaultRecipientType;
@@ -97,7 +97,7 @@ class MailConfigurationCache {
     public RelatedTopic getDefaultSender() {
         if (defaultSenderIsNull == false && defaultSender == null) {
             log.info("reveal default sender");
-            defaultSender = getConfiguration().getRelatedTopic(SENDER, PARENT, CHILD, null, false, true);
+            defaultSender = getConfiguration().getRelatedTopic(SENDER, PARENT, CHILD, null);
             if (defaultSender == null) {
                 defaultSenderIsNull = true;
             }
@@ -108,7 +108,7 @@ class MailConfigurationCache {
     public ResultList<RelatedTopic> getRecipientTypes() {
         if (recipientTypes == null) {
             log.info("reveal recipient types");
-            recipientTypes = dms.getTopics(RECIPIENT_TYPE, false, 0);
+            recipientTypes = dms.getTopics(RECIPIENT_TYPE, 0);
         }
         return recipientTypes;
     }
@@ -133,7 +133,7 @@ class MailConfigurationCache {
             log.info("reveal search types");
             // get aggregated composite search types
             // FIXME use a specific association type and field renderer
-            searchTypes = getConfiguration().getRelatedTopics(AGGREGATION, PARENT, CHILD, TOPIC_TYPE, false, false, 0);
+            searchTypes = getConfiguration().getRelatedTopics(AGGREGATION, PARENT, CHILD, TOPIC_TYPE, 0);
         }
         return searchTypes;
     }
@@ -152,7 +152,7 @@ class MailConfigurationCache {
     public String getSmtpHost() {
         if (smtpHost == null) {
             log.info("reveal smtp host");
-            smtpHost = getConfiguration().getCompositeValue()//
+            smtpHost = getConfiguration().getChildTopics()//
                     .getTopic(SMTP_HOST).getSimpleValue().toString();
         }
         return smtpHost;
@@ -164,7 +164,7 @@ class MailConfigurationCache {
             searchParentTypes = new HashMap<String, Topic>();
             for (Topic type : getSearchTypes()) {
                 searchParentTypes.put(type.getUri(), type.getRelatedTopic(null,//
-                        CHILD_TYPE, PARENT_TYPE, TOPIC_TYPE, false, false));
+                        CHILD_TYPE, PARENT_TYPE, TOPIC_TYPE));
             }
         }
         return searchParentTypes;

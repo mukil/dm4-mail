@@ -8,14 +8,12 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.logging.Logger;
 
 import de.deepamehta.core.RelatedTopic;
 import de.deepamehta.core.Topic;
-import de.deepamehta.core.model.CompositeValueModel;
+import de.deepamehta.core.model.ChildTopicsModel;
 import de.deepamehta.core.model.TopicModel;
-import de.deepamehta.core.service.ClientState;
 import de.deepamehta.core.service.DeepaMehtaService;
 
 public class Autocomplete {
@@ -42,11 +40,10 @@ public class Autocomplete {
      * call a search on all configured topic types and on all email addresses
      * 
      * @param query
-     * @param clientState
      * 
      * @return topic list with email ID and contact type URI
      */
-    public List<TopicModel> search(String query, ClientState clientState) {
+    public List<TopicModel> search(String query) {
         // search and hash parent results by ID (to overwrite duplicates)
         Map<Long, Topic> parents = new HashMap<Long, Topic>();
         for (String uri : config.getSearchTypeUris()) {
@@ -59,8 +56,8 @@ public class Autocomplete {
         // get and hash addresses of each parent
         Map<Long, TopicModel> addresses = new HashMap<Long, TopicModel>();
         for (Topic result : parents.values()) {
-            Topic parent = dms.getTopic(result.getId(), true);
-            for (TopicModel address : getEmailAddresses(parent, clientState)) {
+            Topic parent = dms.getTopic(result.getId()).loadChildTopics();
+            for (TopicModel address : getEmailAddresses(parent)) {
                 putAddress(addresses, parent, address);
             }
         }
@@ -79,7 +76,7 @@ public class Autocomplete {
         Collections.sort(result, VALUE_COMPARATOR);
 
         // FIXME inconsistent model => use a specific view model
-        return result;
+        return result;  
     }
 
     /**
@@ -89,19 +86,19 @@ public class Autocomplete {
      * 
      * @return list of mail addresses with at minimum one empty address
      */
-    private List<TopicModel> getEmailAddresses(Topic topic, ClientState clientState) {
+    private List<TopicModel> getEmailAddresses(Topic topic) {
         // FIXME attached value should support add(...) of child compositions
-        if (topic.getCompositeValue().has(EMAIL_ADDRESS) == false) {
+        if (topic.getChildTopics().has(EMAIL_ADDRESS) == false) {
             log.warning("composite of " + topic.getSimpleValue() + " contains no email address");
-            topic.setCompositeValue(new CompositeValueModel().add(EMAIL_ADDRESS, //
-                    new TopicModel(EMAIL_ADDRESS)), clientState, null);
+            topic.setChildTopics(new ChildTopicsModel().add(EMAIL_ADDRESS, //
+                    new TopicModel(EMAIL_ADDRESS)));
         }
         // return the existing or the newly created list of addresses
-        return topic.getCompositeValue().getModel().getTopics(EMAIL_ADDRESS);
+        return topic.getChildTopics().getModel().getTopics(EMAIL_ADDRESS);
     }
 
     private RelatedTopic getParent(Topic child) {
-        return child.getRelatedTopic(COMPOSITION, CHILD, PARENT, null, false, false);
+        return child.getRelatedTopic(COMPOSITION, CHILD, PARENT, null);
     }
 
     /**
@@ -110,10 +107,11 @@ public class Autocomplete {
      */
     private void putAddress(Map<Long, TopicModel> addresses, Topic parent, TopicModel address) {
         // concatenate values
-        address.setSimpleValue(parent.getSimpleValue() + //
-                " &lt;" + address.getSimpleValue() + "&gt;");
-        // replace type URI
-        address.setTypeUri(parent.getTypeUri());
-        addresses.put(address.getId(), address);
+        if (address != null && parent != null) {
+            address.setSimpleValue(parent.getSimpleValue() + "&lt;" + address.getSimpleValue() + "&gt;");
+            // replace type URI
+            address.setTypeUri(parent.getTypeUri());
+            addresses.put(address.getId(), address);   
+        }
     }
 }

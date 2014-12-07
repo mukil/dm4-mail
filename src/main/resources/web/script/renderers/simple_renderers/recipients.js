@@ -61,7 +61,7 @@
     var association = recipient.association
 
     $('option:selected', $(this)).each(function () {
-      association.composite['dm4.mail.recipient.type'] = 'ref_uri:' + $(this).val()
+      association.childs['dm4.mail.recipient.type'] = 'ref_uri:' + $(this).val()
       var directives = dm4c.do_update_association(association)
       var update = $.grep(directives, function (d) { return d.type === 'UPDATE_ASSOCIATION' })[0]
       recipient.association = update.arg // reassign argument of update
@@ -82,7 +82,7 @@
   }
 
   function cloneAndSelectType($types, association) {
-    return $types.clone().val(association.composite['dm4.mail.recipient.type'].uri)
+    return $types.clone().val(association.childs['dm4.mail.recipient.type'].uri)
   }
 
   function createRecipientEditor(recipient, association, $types) {
@@ -92,7 +92,7 @@
       dm4c.do_reveal_related_topic(recipient.id, 'show')
     }
 
-    var email = association.composite['dm4.contacts.email_address']
+    var email = association.childs['dm4.contacts.email_address']
     var $remove = dm4c.ui.button({ on_click: onRemoveButtonClick, icon: 'circle-minus' })
     var $icon = dm4c.render.icon_link(recipient, click)
     var $link = dm4c.render.topic_link(recipient, click)
