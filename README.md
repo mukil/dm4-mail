@@ -59,6 +59,7 @@ of the underlying jQuery UI component
 
 * fixes: re-usage of aggregated e-mail address values
 * fixes: "Send Again" feature (signatures and recipient types remain unique)
+* fixes: a more robust autocomplete-function (NullPointer was thrown occasionally)
 * DeepaMehta 4.3 compatible
 
 

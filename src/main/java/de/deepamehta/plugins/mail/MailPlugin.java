@@ -37,6 +37,7 @@ import de.deepamehta.core.model.TopicModel;
 import de.deepamehta.core.model.TopicRoleModel;
 import de.deepamehta.core.osgi.PluginActivator;
 import de.deepamehta.core.service.Inject;
+import de.deepamehta.core.service.PluginService;
 import de.deepamehta.core.service.ResultList;
 import de.deepamehta.core.service.event.PostCreateTopicListener;
 import de.deepamehta.core.storage.spi.DeepaMehtaTransaction;
@@ -470,7 +471,6 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
     @Override
     public void init() {
         isInitialized = true;
-        cidEmbedment = new ImageCidEmbedment(fileService);
         configureIfReady();
     }
 
@@ -683,6 +683,20 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
             log.log(level, logMessage); // log only the message
         }
         report.addError(error, message);
+    }
+    
+    @Override
+    public void serviceArrived(PluginService service) {
+        if (service instanceof FilesService) {
+            cidEmbedment = new ImageCidEmbedment(fileService);
+        }
+    }
+    
+    @Override
+    public void serviceGone(PluginService service) {
+        if (service instanceof FilesService) {
+            cidEmbedment = null;
+        }
     }
 
 }
