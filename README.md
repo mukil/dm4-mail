@@ -49,4 +49,16 @@ of the underlying jQuery UI component
 
 ![write mail](https://github.com/dgf/dm4-mail/raw/master/doc/mail.png)
 
+### Release History
+
+0.2.1, Dec 07, 2014
+
+* fixes: re-usage of aggregated e-mail address values
+* fixes: "Send Again" feature (signatures and recipient types remain unique)
+* DeepaMehta 4.3 compatible
+
+
+Authors
+-------
+Danny Graf, Malte Reißg 2012-2014
 

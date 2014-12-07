@@ -230,29 +230,52 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
         log.info("copy mail " + mailId);
         DeepaMehtaTransaction tx = dms.beginTx();
         try {
+            
+            // 1 clone mail ..
             Topic mail = dms.getTopic(mailId, true);
-            TopicModel model = new TopicModel(MAIL, mail.getCompositeValue().getModel() // copy
-                    .put(DATE, "").put(MESSAGE_ID, "")); // nullify date and ID
+            CompositeValueModel oldMail = mail.getModel().getCompositeValueModel();
+            String subject = oldMail.getString(SUBJECT);
+            String mailBody = oldMail.getString(BODY);
+            boolean fromDummy = oldMail.getBoolean(FROM);
+            String sentDate = "", messageId = ""; // nullify date and ID
+            // 1.1 re-use existing signatures (there is just one but see migration1 ###)
+            List<TopicModel> signatures = oldMail.getTopics(SIGNATURE);
+            long signatureId = -1;
+            for (TopicModel signature : signatures) {
+                signatureId = signature.getId();
+            }
+            CompositeValueModel clonedMail = new CompositeValueModel()
+                .put(SUBJECT, subject).put(BODY, mailBody)
+                .put(FROM, fromDummy).put(DATE, sentDate).put(MESSAGE_ID, messageId)
+                .addRef(SIGNATURE, signatureId); // do not copy signatures..
+            TopicModel model = new TopicModel(MAIL, clonedMail);
             Topic clone = dms.createTopic(model, cookie);
-
-            // copy sender association
-            RelatedTopic sender = getSender(mail, true); 
-            // #593 ref?
-            associateSender(clone.getId(), sender, sender.getRelatingAssociation()//
-                    .getCompositeValue().getModel(), cookie);
-
-            // copy recipient associations
+            
+            // 2 clone sender association ..
+            RelatedTopic sender = getSender(mail, true);
+            CompositeValue senderAssociation = sender.getRelatingAssociation().getCompositeValue();
+            long addressId = senderAssociation.getTopic(EMAIL_ADDRESS).getId();
+            // 2.1 reference email address topic on new sender association
+            CompositeValueModel newModel = new CompositeValueModel()
+                .putRef(EMAIL_ADDRESS, addressId);
+            associateSender(clone.getId(), sender, newModel, cookie);
+            
+            // 3 clone recipient associations  ..
+            ResultList<RelatedTopic> recipientList = mail.getRelatedTopics(RECIPIENT, PARENT, CHILD, null, false, true, 0);
             if (includeRecipients) {
-                for (RelatedTopic recipient : mail.getRelatedTopics(RECIPIENT,//
-                        PARENT, CHILD, null, false, true, 0)) {
+                for (RelatedTopic recipient : recipientList) {
                     for (Association association : dms.getAssociations(mail.getId(),//
                             recipient.getId())) {
                         if (association.getTypeUri().equals(RECIPIENT) == false) {
                             continue; // sender or something else found
                         }
-                        // #593 ref?
-                        CompositeValue value = dms.getAssociation(association.getId(), true).getCompositeValue();
-                        associateRecipient(clone.getId(), recipient, value.getModel(), cookie);
+                        // 3.1 re-use existing recipient types
+                        CompositeValueModel recipientAssociationModel = dms.getAssociation(association.getId(), true)
+                            .getCompositeValue().getModel();
+                        CompositeValueModel newValue = new CompositeValueModel()
+                            .putRef(RECIPIENT_TYPE, recipientAssociationModel.getTopic(RECIPIENT_TYPE).getUri())
+                            .putRef(EMAIL_ADDRESS, recipientAssociationModel.getTopic(EMAIL_ADDRESS).getId());
+                        associateRecipient(clone.getId(), recipient, newValue, cookie);
                     }
                 }
             }
@@ -563,27 +586,13 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
         if (sender != null) {
             DeepaMehtaTransaction tx = dms.beginTx();
             try {
-                // ..) what is fetched here: the model of an association associated to AssocType sender?
-                //     that would be an "E-Mail Address"-Value (being aggregated to a "Sender"-AssocType)
-                CompositeValueModel value = sender.getRelatingAssociation().getCompositeValue().getModel();
-                //     making: associateSender(MailTopic, SenderTopic, E-Mail Address Value)?
-                associateSender(mail.getId(), sender, value, clientState);
-                // 
+                CompositeValue value = sender.getRelatingAssociation().getCompositeValue();
                 long addressId = value.getTopic(EMAIL_ADDRESS).getId();
-                // ..) fetches (some topic being parent) related to "Sender"-Topic (most probably a signature topic )
+                CompositeValueModel newValue = new CompositeValueModel()
+                    .putRef(EMAIL_ADDRESS, addressId); // re-use existing e-mail address topics
+                associateSender(mail.getId(), sender, newValue, clientState);
                 RelatedTopic signature = getContactSignature(sender, addressId);
                 if (signature != null) {
-                    // ### do we want to re-use or duplicate the signatures child topics ?
-                    // ..) add a reference to the senders "Signature" to sent "Mail"
-                    /** CompositeValueModel signatureModel = new CompositeValueModel();
-                    signatureModel.add("dm4.mail.signature.name", signature.getModel()
-                        .getCompositeValueModel().getTopic("dm4.mail.signature.name"));
-                    signatureModel.add("dm4.mail.from", signature.getModel()
-                        .getCompositeValueModel().getTopic("dm4.mail.from"));
-                    signatureModel.add("dm4.mail.body", signature.getModel()
-                        .getCompositeValueModel().getTopic("dm4.mail.body"));
-                    TopicModel signatureCopy = new TopicModel(SIGNATURE, signatureModel);
-                    log.info("DEBUG: Copied Signature: " + signature.getModel().toJSON()); **/
                     mail.getCompositeValue().getModel().add(SIGNATURE, signature.getModel());
                 }
                 tx.success();
@@ -592,7 +601,7 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
             }
         }
     }
-
+    
     private Association associateRecipient(long topicId, Topic recipient, CompositeValueModel value,
             ClientState clientState) {
         return dms.createAssociation(new AssociationModel(RECIPIENT,//
