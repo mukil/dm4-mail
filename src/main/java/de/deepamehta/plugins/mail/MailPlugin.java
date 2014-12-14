@@ -376,6 +376,12 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
 
     @Override
     public StatusReport send(Mail mail) {
+        
+        log.info("DEBUG: Current classloader of MailPlugin is: " 
+            + Thread.currentThread().getContextClassLoader().toString());
+        Thread.currentThread().setContextClassLoader(MailPlugin.class.getClassLoader());
+        log.info("DEBUG: Quickfixed classloader of MailPlugin is: " 
+            + Thread.currentThread().getContextClassLoader().toString());
         StatusReport statusReport = new StatusReport(mail.getTopic());
 
         HtmlEmail email = new HtmlEmail();

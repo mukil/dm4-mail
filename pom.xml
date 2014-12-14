@@ -73,8 +73,14 @@
                     <instructions>
                         <!-- embed JAF to merge class loader of mail -->
                         <Embed-Dependency>jsoup,activation,mail,commons-email</Embed-Dependency>
-                        <!-- optional include - JAF searches in class loader space if not exist -->
-                        <Import-Package>sun.security.util;resolution:=optional,*</Import-Package>
+                        <!-- optional include - JAF searches in class loader space if not exist 
+                        javax.activation.*,com.sun.mail.*,
+                        javax.activation;version="1.1",javax.mail;version="1.4",
+                        javax.mail.*,*
+                        -->
+                        <Import-Package>
+                            sun.security.util;resolution:=optional,*
+                        </Import-Package>
                         <Bundle-SymbolicName>
                             de.deepamehta.mail
                         </Bundle-SymbolicName>
