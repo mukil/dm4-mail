@@ -72,14 +72,22 @@
                 <configuration>
                     <instructions>
                         <!-- embed JAF to merge class loader of mail -->
-                        <Embed-Dependency>jsoup,activation,mail,commons-email</Embed-Dependency>
+                        <Embed-Dependency>jsoup,mail,commons-email</Embed-Dependency>
                         <!-- optional include - JAF searches in class loader space if not exist 
-                        javax.activation.*,com.sun.mail.*,
-                        javax.activation;version="1.1",javax.mail;version="1.4",
-                        javax.mail.*,*
+                        The following import-declarations:
+                        javax.mail;version="1.4.2",
+                        javax.mail.internet;version="1.4.2",
+                        javax.mail.util;version="1.4.2",*
+                        are somehow already by default ((maybe they come via the asterisk)?) in our bundles header .. 
+                        but those should make just sense if we would _not_ embed 'mail', right?
+                        so what if that asterisk export _makes_ them resolve to another bundle at first place?
+                        now: try to exclude "resolvement" of 'javax.mail' to jersey-core but 
+                        let it resolve to the embedded ones we ship (few line) above
                         -->
                         <Import-Package>
-                            sun.security.util;resolution:=optional,*
+                            sun.security.util;resolution:=optional,
+                            !javax.mail,!javax.mail.internet,
+                            !javax.mail.util,*
                         </Import-Package>
                         <Bundle-SymbolicName>
                             de.deepamehta.mail

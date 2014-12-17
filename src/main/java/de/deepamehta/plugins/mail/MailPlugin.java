@@ -220,7 +220,7 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
         DeepaMehtaTransaction tx = dms.beginTx();
         try {
             // 1 clone mail ..
-            Topic mail = dms.getTopic(mailId);
+            Topic mail = dms.getTopic(mailId).loadChildTopics();
             ChildTopicsModel oldMail = mail.getModel().getChildTopicsModel();
             String subject = oldMail.getString(SUBJECT);
             String mailBody = oldMail.getString(BODY);
@@ -379,9 +379,9 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
         
         log.info("DEBUG: Current classloader of MailPlugin is: " 
             + Thread.currentThread().getContextClassLoader().toString());
-        Thread.currentThread().setContextClassLoader(MailPlugin.class.getClassLoader());
-        log.info("DEBUG: Quickfixed classloader of MailPlugin is: " 
-            + Thread.currentThread().getContextClassLoader().toString());
+        // Thread.currentThread().setContextClassLoader(MailPlugin.class.getClassLoader());
+        // log.info("DEBUG: Quickfixed classloader of MailPlugin is: " 
+            // + Thread.currentThread().getContextClassLoader().toString());
         StatusReport statusReport = new StatusReport(mail.getTopic());
 
         HtmlEmail email = new HtmlEmail();
@@ -647,7 +647,7 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
             // do fetch relating composite
             RelatedTopic sender = topic.getRelatedTopic(SENDER, PARENT, CHILD, null);
             if (sender != null) { // this may be the case when a new mail is instantiated 
-                sender.getAssociation(SENDER, PARENT, CHILD, topic.getId()).loadChildTopics();
+                sender.getAssociation(SENDER, CHILD, PARENT, topic.getId()).loadChildTopics();
             }
             return sender;
         }
