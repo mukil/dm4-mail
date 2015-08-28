@@ -36,6 +36,7 @@ import de.deepamehta.core.model.SimpleValue;
 import de.deepamehta.core.model.TopicModel;
 import de.deepamehta.core.model.TopicRoleModel;
 import de.deepamehta.core.osgi.PluginActivator;
+import de.deepamehta.core.service.DeepaMehtaService;
 import de.deepamehta.core.service.Inject;
 import de.deepamehta.core.service.PluginService;
 import de.deepamehta.core.service.ResultList;
@@ -49,6 +50,7 @@ import de.deepamehta.plugins.accesscontrol.service.AccessControlService;
 import de.deepamehta.plugins.files.ResourceInfo;
 import de.deepamehta.plugins.files.service.FilesService;
 import de.deepamehta.plugins.mail.service.MailService;
+import javax.mail.NoSuchProviderException;
 
 @Path("/mail")
 @Produces(MediaType.APPLICATION_JSON)
@@ -376,12 +378,7 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
 
     @Override
     public StatusReport send(Mail mail) {
-        
-        log.info("DEBUG: Current classloader of MailPlugin is: " 
-            + Thread.currentThread().getContextClassLoader().toString());
-        // Thread.currentThread().setContextClassLoader(MailPlugin.class.getClassLoader());
-        // log.info("DEBUG: Quickfixed classloader of MailPlugin is: " 
-            // + Thread.currentThread().getContextClassLoader().toString());
+
         StatusReport statusReport = new StatusReport(mail.getTopic());
 
         HtmlEmail email = new HtmlEmail();
@@ -456,18 +453,34 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
         if (statusReport.hasErrors()) {
             statusReport.setMessage("Mail can NOT be sent");
         } else { // send, update message ID and return status with attached mail
+            String messageId = null;
             try {
-                String messageId = email.send();
-                statusReport.setMessage("Mail was SUCCESSFULLY sent to " + //
-                        recipients.getCount() + " mail addresses");
-                mail.setMessageId(messageId);
+                messageId = email.send();
             } catch (EmailException e) {
-                statusReport.setMessage("Sending mail FAILED");
-                reportException(statusReport, Level.SEVERE, MailError.SEND, e);
-            } catch (Exception e) { // error after send
-                reportException(statusReport, Level.SEVERE, MailError.UPDATE, e);
+                if (e.getCause() instanceof NoSuchProviderException) {
+                    // retry with local class loader
+                    log.info("Working around OSGi issue: Retrying to send mail after setting local classloader!");
+                    ClassLoader threadContext = Thread.currentThread().getContextClassLoader();
+                    Thread.currentThread().setContextClassLoader(this.getClass().getClassLoader());
+                    try {
+                        messageId = email.sendMimeMessage();
+                        statusReport.setMessage("Mail was SUCCESSFULLY sent to " + //
+                            recipients.getCount() + " mail addresses");
+                    } catch (EmailException ex) {
+                        log.log(Level.SEVERE, null, ex);
+                    } finally {
+                        // reuse the original thread class loader
+                        Thread.currentThread().setContextClassLoader(threadContext);
+                    }
+                } else {
+                    // rethrow mail exception
+                    statusReport.setMessage("Sending mail FAILED");
+                    reportException(statusReport, Level.SEVERE, MailError.SEND, e);
+                }
             }
+
         }
+
         return statusReport;
     }
 

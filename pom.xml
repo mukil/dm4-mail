@@ -72,7 +72,7 @@
                 <configuration>
                     <instructions>
                         <!-- embed JAF to merge class loader of mail -->
-                        <Embed-Dependency>jsoup,mail,commons-email</Embed-Dependency>
+                        <Embed-Dependency>jsoup,activation,mail,commons-email</Embed-Dependency>
                         <!-- optional include - JAF searches in class loader space if not exist 
                         The following import-declarations:
                         javax.mail;version="1.4.2",
@@ -85,9 +85,14 @@
                         let it resolve to the embedded ones we ship (few line) above
                         -->
                         <Import-Package>
+                            javax.activation;resolution:=optional,
+                            javax.mail.internet;resolution:=optional,
+                            javax.mail;resolution:=optional,
+                            org.apache.commons.mail;resolution:=optional,
+                            org.jsoup.nodes;resolution:=optional,
+                            org.jsoup;resolution:=optional,
                             sun.security.util;resolution:=optional,
-                            !javax.mail,!javax.mail.internet,
-                            !javax.mail.util,*
+                            *
                         </Import-Package>
                         <Bundle-SymbolicName>
                             de.deepamehta.mail

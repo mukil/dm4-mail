@@ -51,9 +51,9 @@ of the underlying jQuery UI component
 
 ### Release History
 
-0.3.0, Upcoming
+0.3.0-SNAPSHOT, Aug 28, 2015
 
-* DeepaMehta 4.4 compatible
+* DeepaMehta 4.4 compatible ..
 
 0.2.1, Dec 07, 2014
 
@@ -65,5 +65,5 @@ of the underlying jQuery UI component
 
 Authors
 -------
-Danny Graf, Malte Reißg 2012-2014
+Danny Graf, Malte Reißg 2012-2015
 
