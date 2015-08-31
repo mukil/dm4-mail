@@ -26,29 +26,18 @@ class MailConfigurationCache {
     private static Logger log = Logger.getLogger(MailConfigurationCache.class.getName());
 
     public static final String MAIL_CONFIG = "dm4.mail.config";
-
     public static final String SMTP_HOST = "dm4.mail.config.host";
 
     private Topic config = null;
-
-    private RecipientType defaultRecipientType = null;
-
-    private RelatedTopic defaultSender = null;
-
-    private boolean defaultSenderIsNull = false;
-
     private final DeepaMehtaService dms;
-
+    private RecipientType defaultRecipientType = null;
+    private RelatedTopic defaultSender = null;
+    private boolean defaultSenderIsNull = false;
     private ResultList<RelatedTopic> recipientTypes;
-
     private Set<String> recipientTypeUris;
-
     private Map<String, Topic> searchParentTypes;
-
     private ResultList<RelatedTopic> searchTypes;
-
     private Set<String> searchTypeUris;
-
     private String smtpHost = null;
 
     public MailConfigurationCache(DeepaMehtaService dms) {

@@ -41,7 +41,7 @@ public class Mail {
         if (topic.getChildTopics().has(SIGNATURE) == false) {
             throw new IllegalArgumentException("Signature of mail not found");
         } else {
-            List<Topic> signature = topic.getChildTopics().getTopics(SIGNATURE);
+            List<RelatedTopic> signature = topic.getChildTopics().getTopics(SIGNATURE);
             ChildTopics value = signature.get(0).getChildTopics();
             if (value.has(BODY) == false) {
                 throw new IllegalArgumentException("Signature of mail is empty");

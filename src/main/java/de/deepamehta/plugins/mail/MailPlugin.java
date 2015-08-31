@@ -32,22 +32,16 @@ import de.deepamehta.core.RelatedTopic;
 import de.deepamehta.core.Topic;
 import de.deepamehta.core.model.AssociationModel;
 import de.deepamehta.core.model.ChildTopicsModel;
-import de.deepamehta.core.model.SimpleValue;
+import de.deepamehta.core.model.RelatedTopicModel;
 import de.deepamehta.core.model.TopicModel;
 import de.deepamehta.core.model.TopicRoleModel;
 import de.deepamehta.core.osgi.PluginActivator;
-import de.deepamehta.core.service.DeepaMehtaService;
 import de.deepamehta.core.service.Inject;
 import de.deepamehta.core.service.PluginService;
 import de.deepamehta.core.service.ResultList;
 import de.deepamehta.core.service.event.PostCreateTopicListener;
 import de.deepamehta.core.storage.spi.DeepaMehtaTransaction;
-import de.deepamehta.plugins.accesscontrol.model.ACLEntry;
-import de.deepamehta.plugins.accesscontrol.model.AccessControlList;
-import de.deepamehta.plugins.accesscontrol.model.Operation;
-import de.deepamehta.plugins.accesscontrol.model.UserRole;
 import de.deepamehta.plugins.accesscontrol.service.AccessControlService;
-import de.deepamehta.plugins.files.ResourceInfo;
 import de.deepamehta.plugins.files.service.FilesService;
 import de.deepamehta.plugins.mail.service.MailService;
 import javax.mail.NoSuchProviderException;
@@ -229,7 +223,7 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
             boolean fromDummy = oldMail.getBoolean(FROM);
             String sentDate = "", messageId = ""; // nullify date and ID
             // 1.1 re-use existing signatures (there is just one but see migration1 ###)
-            List<TopicModel> signatures = oldMail.getTopics(SIGNATURE);
+            List<RelatedTopicModel> signatures = oldMail.getTopics(SIGNATURE);
             long signatureId = -1;
             for (TopicModel signature : signatures) {
                 signatureId = signature.getId();
@@ -338,6 +332,8 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
      * Load the configuration.
      *
      * Useful after type and configuration changes with the web-client.
+     * ### this will fail/become useless if system configuration topic approach
+     *     (see Migration3.3) is employed and this is not triggered by "admin"
      */
     @GET
     @Path("/config/load")
@@ -349,7 +345,8 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
     }
 
     /**
-     * Sets the default sender and signature of a mail topic after creation.
+     * #### Sets the default sender and signature of a mail topic after creation.
+     *      ### The concept of a "default sender" needs revision as of 4.6.
      */
     @Override
     public void postCreateTopic(Topic topic) {
@@ -495,55 +492,7 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
 
     private void configureIfReady() {
         if (isInitialized && acService != null && fileService != null) {
-            createAttachmentDirectory();
-            checkACLsOfMigration();
             loadConfiguration();
-        }
-    }
-
-    private void checkACLsOfMigration() {
-        Topic config = dms.getTopic("uri", new SimpleValue("dm4.mail.config"));
-        if (acService.getCreator(config) == null) {
-            DeepaMehtaTransaction tx = dms.beginTx();
-            log.info("initial ACL update of configuration");
-            try {
-                Topic admin = acService.getUsername("admin");
-                String adminName = admin.getSimpleValue().toString();
-                acService.setCreator(config, adminName);
-                acService.setOwner(config, adminName);
-                acService.setACL(config, new AccessControlList(new ACLEntry(Operation.WRITE, UserRole.OWNER)));
-                tx.success();
-            } catch (Exception e) {
-                log.warning("could not update ACLs of migration due to a " 
-                    +  e.getClass().toString());
-            } finally {
-                tx.finish();
-            }
-            
-        }
-    }
-
-    private void createAttachmentDirectory() {
-        // TODO move the initialization to migration "0"
-        try {
-            ResourceInfo resourceInfo = fileService.getResourceInfo(ATTACHMENTS);
-            String kind = resourceInfo.toJSON().getString("kind");
-            if (kind.equals("directory") == false) {
-                String repoPath = System.getProperty("dm4.filerepo.path");
-                String message = "attachment storage directory " + repoPath + File.separator + ATTACHMENTS
-                        + " can not be used";
-                throw new IllegalStateException(message);
-            }
-        } catch (WebApplicationException e) { // !exists
-            // catch fileService info request error => create directory
-            if (e.getResponse().getStatus() != 404) {
-                throw e;
-            } else {
-                log.info("create attachment directory");
-                fileService.createFolder(ATTACHMENTS, "/");
-            }
-        } catch (JSONException e) {
-            throw new RuntimeException(e);
         }
     }
 
@@ -557,14 +506,17 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
         Topic creator = null;
         RelatedTopic sender = null;
 
+        /** ### no default sender
         Topic creatorName = acService.getUsername(acService.getCreator(mail));
         if (creatorName != null) {
             creator = creatorName.getRelatedTopic(null, CHILD, PARENT, USER_ACCOUNT);
-        }
+        } **/
 
         // get user account specific sender
         if (creator != null) {
             sender = getSender(creator, true);
+        } else {
+            log.info("Could not specify \"creator\" of mail and thus not sender.");
         }
 
         // get the configured default sender instead
