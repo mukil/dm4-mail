@@ -453,6 +453,9 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
             String messageId = null;
             try {
                 messageId = email.send();
+                statusReport.setMessage("Mail was SUCCESSFULLY sent to " + //
+                            recipients.getCount() + " mail addresses");
+                mail.setMessageId(messageId);
             } catch (EmailException e) {
                 if (e.getCause() instanceof NoSuchProviderException) {
                     // retry with local class loader
@@ -463,8 +466,11 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
                         messageId = email.sendMimeMessage();
                         statusReport.setMessage("Mail was SUCCESSFULLY sent to " + //
                             recipients.getCount() + " mail addresses");
+                        mail.setMessageId(messageId);
                     } catch (EmailException ex) {
                         log.log(Level.SEVERE, null, ex);
+                        statusReport.setMessage("Sending mail FAILED");
+                        reportException(statusReport, Level.SEVERE, MailError.SEND, e);
                     } finally {
                         // reuse the original thread class loader
                         Thread.currentThread().setContextClassLoader(threadContext);
