@@ -9,12 +9,11 @@ import org.apache.commons.mail.EmailException;
 
 import de.deepamehta.core.Association;
 import de.deepamehta.core.Topic;
-import de.deepamehta.core.service.PluginService;
 import de.deepamehta.plugins.mail.Mail;
 import de.deepamehta.plugins.mail.RecipientType;
 import de.deepamehta.plugins.mail.StatusReport;
 
-public interface MailService extends PluginService {
+public interface MailService {
 
     /**
      * Returns parent of each search type.

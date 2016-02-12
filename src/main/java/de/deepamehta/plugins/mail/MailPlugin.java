@@ -1,50 +1,35 @@
 package de.deepamehta.plugins.mail;
 
-import java.io.File;
+import de.deepamehta.core.Association;
+import de.deepamehta.core.ChildTopics;
+import de.deepamehta.core.RelatedTopic;
+import de.deepamehta.core.Topic;
+import de.deepamehta.core.model.*;
+import de.deepamehta.core.osgi.PluginActivator;
+import de.deepamehta.core.service.DeepaMehtaService;
+import de.deepamehta.core.service.Inject;
+import de.deepamehta.core.service.ResultList;
+import de.deepamehta.core.service.event.PostCreateTopicListener;
+import de.deepamehta.core.storage.spi.DeepaMehtaTransaction;
+import de.deepamehta.plugins.accesscontrol.AccessControlService;
+import de.deepamehta.plugins.files.FilesService;
+import de.deepamehta.plugins.mail.service.MailService;
+import org.apache.commons.mail.EmailAttachment;
+import org.apache.commons.mail.EmailException;
+import org.apache.commons.mail.HtmlEmail;
+import org.jsoup.nodes.Document;
+
+import javax.mail.internet.AddressException;
+import javax.mail.internet.InternetAddress;
+import javax.ws.rs.*;
+import javax.ws.rs.core.MediaType;
 import java.io.UnsupportedEncodingException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.ArrayList;
-
-import javax.mail.internet.InternetAddress;
-import javax.mail.internet.AddressException;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.MediaType;
-
-import org.apache.commons.mail.EmailAttachment;
-import org.apache.commons.mail.EmailException;
-import org.apache.commons.mail.HtmlEmail;
-import org.codehaus.jettison.json.JSONException;
-import org.jsoup.nodes.Document;
-
-import de.deepamehta.core.Association;
-import de.deepamehta.core.ChildTopics;
-import de.deepamehta.core.RelatedTopic;
-import de.deepamehta.core.Topic;
-import de.deepamehta.core.model.AssociationModel;
-import de.deepamehta.core.model.ChildTopicsModel;
-import de.deepamehta.core.model.RelatedTopicModel;
-import de.deepamehta.core.model.TopicModel;
-import de.deepamehta.core.model.TopicRoleModel;
-import de.deepamehta.core.osgi.PluginActivator;
-import de.deepamehta.core.service.Inject;
-import de.deepamehta.core.service.PluginService;
-import de.deepamehta.core.service.ResultList;
-import de.deepamehta.core.service.event.PostCreateTopicListener;
-import de.deepamehta.core.storage.spi.DeepaMehtaTransaction;
-import de.deepamehta.plugins.accesscontrol.service.AccessControlService;
-import de.deepamehta.plugins.files.service.FilesService;
-import de.deepamehta.plugins.mail.service.MailService;
-import javax.mail.NoSuchProviderException;
 
 @Path("/mail")
 @Produces(MediaType.APPLICATION_JSON)
@@ -95,15 +80,14 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
      */
     @POST
     @Path("{mail}/recipient/{address}")
-    public Association associateRecipient(//
-            @PathParam("mail") long mailId,//
-            @PathParam("address") long addressId) {
+    public Association associateRecipient(@PathParam("mail") long mailId,
+                                          @PathParam("address") long addressId) {
         return associateRecipient(mailId, addressId, config.getDefaultRecipientType());
     }
 
     @Override
     public Association associateRecipient(long mailId, long addressId, RecipientType type) {
-        log.info("associate " + mailId + " with recipient address " + addressId);
+        log.info("Associate " + mailId + " with recipient address " + addressId);
         // ### create value of the recipient association (#593 ref?)
         ChildTopicsModel value = new ChildTopicsModel()//
                 .putRef(RECIPIENT_TYPE, type.getUri())//
@@ -146,15 +130,14 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
      */
     @POST
     @Path("{mail}/sender/{address}")
-    public Association mailSender(//
-            @PathParam("mail") long mailId,//
-            @PathParam("address") long addressId) {
+    public Association mailSender(@PathParam("mail") long mailId,
+                                  @PathParam("address") long addressId) {
         return associateSender(mailId, addressId);
     }
 
     @Override
     public Association associateSender(long mailId, long addressId) {
-        log.info("associate " + mailId + " with sender " + addressId);
+        log.info("Associate " + mailId + " with sender " + addressId);
 
         // create value of sender association (#593 ref?)
         ChildTopicsModel value = new ChildTopicsModel().putRef(EMAIL_ADDRESS, addressId);
@@ -209,10 +192,9 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
      */
     @POST
     @Path("/{mail}/copy")
-    public Topic copyMail(//
-            @PathParam("mail") long mailId,//
-            @QueryParam("recipients") boolean includeRecipients) {
-        log.info("copy mail " + mailId);
+    public Topic copyMail(@PathParam("mail") long mailId,
+                          @QueryParam("recipients") boolean includeRecipients) {
+        log.info("Copy mail " + mailId);
         DeepaMehtaTransaction tx = dms.beginTx();
         try {
             // 1 clone mail ..
@@ -277,7 +259,7 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
     @POST
     @Path("/write/{recipient}")
     public Topic writeTo(@PathParam("recipient") long recipientId) {
-        log.info("write a mail to recipient " + recipientId);
+        log.info("Write a mail to recipient " + recipientId);
         DeepaMehtaTransaction tx = dms.beginTx();
         try {
             Topic mail = dms.createTopic(new TopicModel(MAIL));
@@ -338,7 +320,7 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
     @GET
     @Path("/config/load")
     public Topic loadConfiguration() {
-        log.info("load mail configuration");
+        log.info("Load mail configuration");
         config = new MailConfigurationCache(dms);
         autocomplete = new Autocomplete(dms, config);
         return config.getTopic();
@@ -367,14 +349,19 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
      */
     @POST
     @Path("/{mail}/send")
-    public StatusReport send(//
-            @PathParam("mail") long mailId) {
-        log.info("send mail " + mailId);
+    public StatusReport send(@PathParam("mail") long mailId) {
+        log.info("Send mail " + mailId);
         return send(new Mail(mailId, dms));
     }
 
     @Override
     public StatusReport send(Mail mail) {
+
+        // Hot Fix: Classloader issue we have in OSGi since using Pax web?
+        // Latest issue was ..
+        // "Caused by: javax.activation.UnsupportedDataTypeException: no object DCH for MIME type multipart/mixed;"
+        Thread.currentThread().setContextClassLoader(MailPlugin.class.getClassLoader());
+        log.info("BeforeSend: Set ClassLoader to " + Thread.currentThread().getContextClassLoader().toString());
 
         StatusReport statusReport = new StatusReport(mail.getTopic());
 
@@ -423,7 +410,7 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
                 String path = fileService.getFile(fileId).getAbsolutePath();
                 EmailAttachment attachment = new EmailAttachment();
                 attachment.setPath(path);
-                log.fine("attach " + path);
+                log.info("Attach " + path);
                 // ..) Attach Attachmentss
                 email.attach(attachment);
             } catch (Exception e) {
@@ -450,38 +437,21 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
         if (statusReport.hasErrors()) {
             statusReport.setMessage("Mail can NOT be sent");
         } else { // send, update message ID and return status with attached mail
-            String messageId = null;
             try {
-                messageId = email.send();
+                String messageId = email.send();
                 statusReport.setMessage("Mail was SUCCESSFULLY sent to " + //
                             recipients.getCount() + " mail addresses");
                 mail.setMessageId(messageId);
             } catch (EmailException e) {
-                if (e.getCause() instanceof NoSuchProviderException) {
-                    // retry with local class loader
-                    log.info("Working around OSGi issue: Retrying to send mail after setting local classloader!");
-                    ClassLoader threadContext = Thread.currentThread().getContextClassLoader();
-                    Thread.currentThread().setContextClassLoader(this.getClass().getClassLoader());
-                    try {
-                        messageId = email.sendMimeMessage();
-                        statusReport.setMessage("Mail was SUCCESSFULLY sent to " + //
-                            recipients.getCount() + " mail addresses");
-                        mail.setMessageId(messageId);
-                    } catch (EmailException ex) {
-                        log.log(Level.SEVERE, null, ex);
-                        statusReport.setMessage("Sending mail FAILED");
-                        reportException(statusReport, Level.SEVERE, MailError.SEND, e);
-                    } finally {
-                        // reuse the original thread class loader
-                        Thread.currentThread().setContextClassLoader(threadContext);
-                    }
-                } else {
-                    // rethrow mail exception
-                    statusReport.setMessage("Sending mail FAILED");
-                    reportException(statusReport, Level.SEVERE, MailError.SEND, e);
-                }
+                statusReport.setMessage("Sending mail FAILED");
+                reportException(statusReport, Level.SEVERE, MailError.SEND, e);
+            } catch (Exception e) { // error after send
+                reportException(statusReport, Level.SEVERE, MailError.UPDATE, e);
+            } finally {
+                // Fix: Classloader issue we have in OSGi since using Pax web
+                Thread.currentThread().setContextClassLoader(DeepaMehtaService.class.getClassLoader());
+                log.info("AfterSend: Set ClassLoader back " + Thread.currentThread().getContextClassLoader().toString());
             }
-
         }
 
         return statusReport;
@@ -499,12 +469,38 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
     private void configureIfReady() {
         if (isInitialized && acService != null && fileService != null) {
             loadConfiguration();
+            cidEmbedment = new ImageCidEmbedment(fileService);
         }
     }
 
+    /** Yet unclear how and when this extra dir is used. Is it to archive once send attachments?
+     * Mailing functionalty, as well as embedding files/images should also work fine without this custom dir.
+     * private void createAttachmentDirectory() {
+        try {
+            // Check for an "attachments" directory in the resp. filerepo
+            ResourceInfo resourceInfo = fileService.getResourceInfo(MailPlugin.ATTACHMENTS);
+            String kind = resourceInfo.toJSON().getString("kind");
+            if (kind.equals("directory") == false) {
+                String repoPath = System.getProperty("dm4.filerepo.path");
+                String message = "Migration 3: attachment storage directory " + repoPath + File.separator + MailPlugin.ATTACHMENTS
+                        + " can not be used";
+                throw new IllegalStateException(message);
+            }
+        } catch (WebApplicationException e) { // !exists
+            // catch fileService info request error => create directory
+            if (e.getResponse().getStatus() != 404) {
+                throw e;
+            } else {
+                log.info("Migration 3: create attachment directory in the resp. filerepo");
+                fileService.createFolder(MailPlugin.ATTACHMENTS, "/");
+            }
+        } catch (JSONException e) {
+            throw new RuntimeException(e);
+        }
+    } **/
+
     /**
      * @param mail
-     * @param clientState
      * 
      * @see MailPlugin#postCreateTopic(Topic)
      */
@@ -512,7 +508,7 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
         Topic creator = null;
         RelatedTopic sender = null;
 
-        /** ### no default sender
+        /** ### There is no such thing anymore since the concept of a "creator" is unavailable in acService
         Topic creatorName = acService.getUsername(acService.getCreator(mail));
         if (creatorName != null) {
             creator = creatorName.getRelatedTopic(null, CHILD, PARENT, USER_ACCOUNT);
@@ -660,20 +656,6 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
             log.log(level, logMessage); // log only the message
         }
         report.addError(error, message);
-    }
-    
-    @Override
-    public void serviceArrived(PluginService service) {
-        if (service instanceof FilesService) {
-            cidEmbedment = new ImageCidEmbedment(fileService);
-        }
-    }
-    
-    @Override
-    public void serviceGone(PluginService service) {
-        if (service instanceof FilesService) {
-            cidEmbedment = null;
-        }
     }
 
 }

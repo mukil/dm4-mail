@@ -12,7 +12,6 @@ import java.util.logging.Logger;
 
 import de.deepamehta.core.RelatedTopic;
 import de.deepamehta.core.Topic;
-import de.deepamehta.core.model.ChildTopicsModel;
 import de.deepamehta.core.model.RelatedTopicModel;
 import de.deepamehta.core.model.TopicModel;
 import de.deepamehta.core.service.DeepaMehtaService;
@@ -58,8 +57,11 @@ public class Autocomplete {
         Map<Long, TopicModel> addresses = new HashMap<Long, TopicModel>();
         for (Topic result : parents.values()) {
             Topic parent = dms.getTopic(result.getId()).loadChildTopics();
-            for (TopicModel address : getEmailAddresses(parent)) {
-                putAddress(addresses, parent, address);
+            List<RelatedTopicModel> mailAdresses = getEmailAddresses(parent);
+            if (mailAdresses != null) {
+                for (TopicModel address : getEmailAddresses(parent)) {
+                    putAddress(addresses, parent, address);
+                }
             }
         }
 
@@ -90,9 +92,8 @@ public class Autocomplete {
     private List<RelatedTopicModel> getEmailAddresses(Topic topic) {
         // FIXME attached value should support add(...) of child compositions
         if (topic.getChildTopics().has(EMAIL_ADDRESS) == false) {
-            log.warning("composite of " + topic.getSimpleValue() + " contains no email address");
-            topic.setChildTopics(new ChildTopicsModel().add(EMAIL_ADDRESS, //
-                    new TopicModel(EMAIL_ADDRESS)));
+            log.warning("Composite of " + topic.getSimpleValue() + " contains NO EMAIL ADDRESS");
+            return null;
         }
         // return the existing or the newly created list of addresses
         return topic.getChildTopics().getModel().getTopics(EMAIL_ADDRESS);

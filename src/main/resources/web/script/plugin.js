@@ -43,18 +43,18 @@ dm4c.add_plugin('dm4.mail.plugin', function () {
     } else {
       $message.addClass('error')
       var $errors = $('<ul>')
-      $.each(status.errors, function (e, error) {
-        var $topics = $('<ul>')
-        $.each(error.topics, function (t, topic) {
-          $topics.append($('<li>').text(topic))
-        })
-        $errors.append($('<li>').append($('<span>').text(error.message)).append($topics))
-      })
+      for (var e in status.errors) {
+          var error = status.errors[e]
+          // TODO: for (var t in errors.topics)
+          // var $topics = $('<ul>')
+          // $topics.append($('<li>').text(topic))
+          $errors.append($('<li>').append($('<span>').text(error.message)).append('<br/>')
+                .append($('<span>').text(error.topics)))
+      }
       dialogConfiguration.content.append($errors)
     }
 
-    var dialog = dm4c.ui.dialog(dialogConfiguration)
-    dialog.open()
+    var dialog = dm4c.ui.dialog(dialogConfiguration) // opens dialog automatically
     function closeAfterSuccess() {
       dm4c.do_select_topic(status.topic_id) // show mail with sent date and ID
       dialog.close(217)

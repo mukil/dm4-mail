@@ -4,7 +4,7 @@ SMTP Mail plugin
 
 ## Requirements
 
-  * [DeepaMehta 4](http://github.com/jri/deepamehta) 4.4
+  * [DeepaMehta 4](http://github.com/jri/deepamehta) 4.7
 
 ## Usage
 
@@ -20,7 +20,7 @@ the base *Topic Type* list of autocompletion
 
 hint: after each configuration update you have to call the *Reload* action of it
 
-![configuration](https://github.com/dgf/dm4-mail/raw/master/doc/configuration.png)
+![configuration](https://github.com/mukil/dm4-mail/raw/master/doc/configuration.png)
 
 ### configure user specific sender and signature
 
@@ -31,7 +31,7 @@ reveal your *User Account* and edit it to assign a *From* contact
 from now on each new message is assigned to the configured sender and the signature
 of the corresponding email address
 
-![user configuration](https://github.com/dgf/dm4-mail/raw/master/doc/userconfig.png)
+![user configuration](https://github.com/mukil/dm4-mail/raw/master/doc/userconfig.png)
 
 ### create and send a mail
 
@@ -47,13 +47,17 @@ keyboard hints: use the `<TAB>` key to select an additional recipient from the r
 [Keyboard interaction](http://api.jqueryui.com/autocomplete/) section
 of the underlying jQuery UI component
 
-![write mail](https://github.com/dgf/dm4-mail/raw/master/doc/mail.png)
+![write mail](https://github.com/mukil/dm4-mail/raw/master/doc/mail.png)
 
 ### Release History
 
+0.3.1, UPCOMING
+
+* DeepaMehta 4.7 compatible
+
 0.3.0-SNAPSHOT, Aug 28, 2015
 
-* DeepaMehta 4.4 compatible ..
+* DeepaMehta 4.4.x compatible ..
 
 0.2.1, Dec 07, 2014
 

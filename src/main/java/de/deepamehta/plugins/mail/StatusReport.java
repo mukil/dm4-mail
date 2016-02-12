@@ -10,13 +10,16 @@ import org.codehaus.jettison.json.JSONObject;
 
 import de.deepamehta.core.JSONEnabled;
 import de.deepamehta.core.Topic;
-import de.deepamehta.core.util.DeepaMehtaUtils;
+import java.util.Iterator;
+import java.util.logging.Logger;
 
 public class StatusReport implements JSONEnabled {
 
     private String message;
-
     private Topic topic;
+
+        
+    private static Logger log = Logger.getLogger(MailPlugin.class.getName());
 
     // error code > topic id > topic specific message
     private Map<MailError, Set<String>> errors = new HashMap<MailError, Set<String>>();
@@ -53,13 +56,19 @@ public class StatusReport implements JSONEnabled {
                     .put("message", message)//
                     .put("success", hasErrors() ? false : true)//
                     .put("topic_id", topic.getId());
-            if (errors.isEmpty() == false) { // map error messages
+            if (hasErrors()) { // map error messages
                 JSONArray jsonErrors = new JSONArray();
                 for (MailError mailError : errors.keySet()) {
-                    JSONArray stringsToJson = DeepaMehtaUtils.stringsToJson(errors.get(mailError));
-                    jsonErrors.put(new JSONObject()//
-                            .put("message", mailError.getMessage())//
-                            .put("topics", stringsToJson));
+                    Set<String> mailErrorTopics = errors.get(mailError);
+                    log.info("Mail has Errors:" + mailErrorTopics.toString());
+                    Iterator iterator = mailErrorTopics.iterator();
+                    while (iterator.hasNext()) {
+                        Object topicError = iterator.next();
+                        jsonErrors.put(new JSONObject()
+                            .put("message", mailError.getMessage())
+                            // ### find/implement a better replacement for DeepaMehtaUtils.stringToJSON
+                            .put("topics", topicError));
+                    }
                 }
                 json.put("errors", jsonErrors);
             }
