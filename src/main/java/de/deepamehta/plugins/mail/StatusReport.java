@@ -59,16 +59,9 @@ public class StatusReport implements JSONEnabled {
             if (hasErrors()) { // map error messages
                 JSONArray jsonErrors = new JSONArray();
                 for (MailError mailError : errors.keySet()) {
-                    Set<String> mailErrorTopics = errors.get(mailError);
-                    log.info("Mail has Errors:" + mailErrorTopics.toString());
-                    Iterator iterator = mailErrorTopics.iterator();
-                    while (iterator.hasNext()) {
-                        Object topicError = iterator.next();
-                        jsonErrors.put(new JSONObject()
-                            .put("message", mailError.getMessage())
-                            // ### find/implement a better replacement for DeepaMehtaUtils.stringToJSON
-                            .put("topics", topicError));
-                    }
+                    jsonErrors.put(new JSONObject()
+                        .put("message", mailError.getMessage())
+                        .put("topics", new JSONArray(errors.get(mailError))));
                 }
                 json.put("errors", jsonErrors);
             }

@@ -508,11 +508,12 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
         Topic creator = null;
         RelatedTopic sender = null;
 
-        /** ### There is no such thing anymore since the concept of a "creator" is unavailable in acService
-        Topic creatorName = acService.getUsername(acService.getCreator(mail));
+        // get default sender
+        String username = acService.getCreator(mail.getId());
+        Topic creatorName = acService.getUsernameTopic(username);
         if (creatorName != null) {
             creator = creatorName.getRelatedTopic(null, CHILD, PARENT, USER_ACCOUNT);
-        } **/
+        }
 
         // get user account specific sender
         if (creator != null) {
