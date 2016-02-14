@@ -9,11 +9,18 @@ import de.deepamehta.core.osgi.PluginActivator;
 import de.deepamehta.core.service.DeepaMehtaService;
 import de.deepamehta.core.service.Inject;
 import de.deepamehta.core.service.ResultList;
+import de.deepamehta.core.service.Transactional;
 import de.deepamehta.core.service.event.PostCreateTopicListener;
 import de.deepamehta.core.storage.spi.DeepaMehtaTransaction;
 import de.deepamehta.plugins.accesscontrol.AccessControlService;
+import de.deepamehta.plugins.files.FilesPlugin;
 import de.deepamehta.plugins.files.FilesService;
+import de.deepamehta.plugins.files.ItemKind;
+import de.deepamehta.plugins.files.ResourceInfo;
+import de.deepamehta.plugins.files.StoredFile;
+import de.deepamehta.plugins.files.UploadedFile;
 import de.deepamehta.plugins.mail.service.MailService;
+import java.io.File;
 import org.apache.commons.mail.EmailAttachment;
 import org.apache.commons.mail.EmailException;
 import org.apache.commons.mail.HtmlEmail;
@@ -60,6 +67,10 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
     public static final String SIGNATURE = "dm4.mail.signature";
     public static final String SUBJECT = "dm4.mail.subject";
     public static final String USER_ACCOUNT = "dm4.accesscontrol.user_account";
+    // File Repository Constants
+    public static final String FILEREPO_BASE_URI_NAME           = "filerepo";
+    public static final String FILEREPO_ATTACHMENTS_SUBFOLDER   = "attachments";
+    public static final String DM4_HOST_URL = System.getProperty("dm4.host.url");
 
     // service references
     @Inject
@@ -277,6 +288,24 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
         }
     }
 
+    @POST
+    @Path("/attachment/upload")
+    @Consumes(MediaType.MULTIPART_FORM_DATA)
+    @Produces(MediaType.APPLICATION_JSON)
+    @Transactional
+    public Topic upload(UploadedFile attachment) {
+        log.info("Uploading Attachment " + attachment.getName());
+        createAttachmentDirectoryInFilerepo();
+        StoredFile file = fileService.storeFile(attachment, prefix() + File.separator + FILEREPO_ATTACHMENTS_SUBFOLDER);
+        String path = prefix() + File.separator + FILEREPO_ATTACHMENTS_SUBFOLDER + File.separator + file.getFileName();
+        return fileService.getFileTopic(path);
+    }
+
+    private String prefix() {
+        File repo = fileService.getFile("/");
+        return ((FilesPlugin) fileService).repoPath(repo);
+    }
+
     /**
      * @return Default recipient type.
      */
@@ -473,31 +502,32 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
         }
     }
 
-    /** Yet unclear how and when this extra dir is used. Is it to archive once send attachments?
-     * Mailing functionalty, as well as embedding files/images should also work fine without this custom dir.
-     * private void createAttachmentDirectory() {
+    /** Attachments must be uploaded. They are stored in a hardcoded of the resp. filerepo. **/
+    private void createAttachmentDirectoryInFilerepo() {
         try {
-            // Check for an "attachments" directory in the resp. filerepo
-            ResourceInfo resourceInfo = fileService.getResourceInfo(MailPlugin.ATTACHMENTS);
-            String kind = resourceInfo.toJSON().getString("kind");
-            if (kind.equals("directory") == false) {
-                String repoPath = System.getProperty("dm4.filerepo.path");
-                String message = "Migration 3: attachment storage directory " + repoPath + File.separator + MailPlugin.ATTACHMENTS
-                        + " can not be used";
+            // check image file repository
+            ResourceInfo resourceInfo = fileService.getResourceInfo(prefix() + File.separator +
+                    FILEREPO_ATTACHMENTS_SUBFOLDER);
+            // depending on prefix() we check for an "images" folder in the global or workspace filerepo
+            if (resourceInfo.getItemKind() != ItemKind.DIRECTORY) {
+                String message = "MailPlugin: \"attachments\" storage directory in repo path " + fileService.getFile("/") +
+                        prefix() + File.separator + FILEREPO_ATTACHMENTS_SUBFOLDER + " can not be used";
                 throw new IllegalStateException(message);
             }
-        } catch (WebApplicationException e) { // !exists
-            // catch fileService info request error => create directory
-            if (e.getResponse().getStatus() != 404) {
-                throw e;
-            } else {
-                log.info("Migration 3: create attachment directory in the resp. filerepo");
-                fileService.createFolder(MailPlugin.ATTACHMENTS, "/");
+        } catch (WebApplicationException e) {
+            log.info("Created the \"attachments\" subfolder on the fly for new filerepo in " + fileService.getFile("/") +
+                    prefix() + File.separator + FILEREPO_ATTACHMENTS_SUBFOLDER + "!");
+            try {
+                fileService.createFolder(FILEREPO_ATTACHMENTS_SUBFOLDER, prefix());
+            } catch (RuntimeException ex) {
+                log.warning("RuntimeException caught during folder creation, presumably the folder " +
+                        "must already EXIST, so OK:" + ex.getMessage());
             }
-        } catch (JSONException e) {
+            // catch fileService create request failed because of: folder exists
+        } catch (Exception e) {
             throw new RuntimeException(e);
         }
-    } **/
+    }
 
     /**
      * @param mail

@@ -89,8 +89,8 @@
   function createAddButton(attachments, $attachments) {
 
     function add() {
-      dm4c.get_plugin('de.deepamehta.files').open_upload_dialog('/files/attachments', function (response) {
-        var attachment = dm4c.restc.get_topic_by_id(response.topic_id)
+      dm4c.get_plugin('de.deepamehta.files').open_upload_dialog('/mail/attachment/upload', function (response) {
+        var attachment = dm4c.restc.get_topic_by_id(response.id)
         var $attachment = createAttachmentLink(attachment, attachments)
             $attachment.addClass('level1').append(createRemoveButton(attachment, attachments))
         $attachments.append($attachment)
