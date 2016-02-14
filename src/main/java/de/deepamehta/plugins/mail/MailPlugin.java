@@ -104,10 +104,10 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
                 .putRef(RECIPIENT_TYPE, type.getUri())//
                 .putRef(EMAIL_ADDRESS, addressId);
         // get and update or create a new recipient association
-        RelatedTopic recipient = getContactOfEmail(addressId);
+        RelatedTopic recipient = getParentTopicViaComposition(addressId);
         Association association = getRecipientAssociation(mailId, addressId, recipient.getId());
         if (association == null) { // create a recipient association
-            return associateRecipient(mailId, recipient, value);
+            return createRecipientAssociation(mailId, recipient, value);
         } else { // update address and type references
             association.setChildTopics(value);
             return association;
@@ -141,31 +141,30 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
      */
     @POST
     @Path("{mail}/sender/{address}")
-    public Association mailSender(@PathParam("mail") long mailId,
-                                  @PathParam("address") long addressId) {
+    public Association associateMailSender(@PathParam("mail") long mailId, @PathParam("address") long addressId) {
         return associateSender(mailId, addressId);
     }
 
     @Override
     public Association associateSender(long mailId, long addressId) {
-        log.info("Associate " + mailId + " with sender " + addressId);
+        log.info("Associate Mail " + mailId + " with E-Mail Address Topic (identifying a Sender) " + addressId);
 
         // create value of sender association (#593 ref?)
         ChildTopicsModel value = new ChildTopicsModel().putRef(EMAIL_ADDRESS, addressId);
 
         // find existing sender association
-        RelatedTopic sender = getContactOfEmail(addressId);
-        RelatedTopic oldSender = getSender(mailId, false);
+        RelatedTopic sender = getParentTopicViaComposition(addressId);
+        RelatedTopic oldSender = getRelatedSender(mailId, false);
 
         if (oldSender == null) { // create the first sender association
-            return associateSender(mailId, sender, value);
+            return createSenderAssociation(mailId, sender, value);
         } else { // update or delete the old sender
             Association association = getSenderAssociation(mailId, oldSender.getId());
             DeepaMehtaTransaction tx = dms.beginTx();
             try {
                 if (sender.getId() != oldSender.getId()) { // delete the old one
                     dms.deleteAssociation(association.getId());
-                    association = associateSender(mailId, sender, value);
+                    association = createSenderAssociation(mailId, sender, value);
                 } else { // update composite
                     association.setChildTopics(value);
                 }
@@ -203,8 +202,7 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
      */
     @POST
     @Path("/{mail}/copy")
-    public Topic copyMail(@PathParam("mail") long mailId,
-                          @QueryParam("recipients") boolean includeRecipients) {
+    public Topic copyMail(@PathParam("mail") long mailId, @QueryParam("recipients") boolean includeRecipients) {
         log.info("Copy mail " + mailId);
         DeepaMehtaTransaction tx = dms.beginTx();
         try {
@@ -229,13 +227,13 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
             Topic clone = dms.createTopic(model);
             
             // 2 clone sender association ..
-            RelatedTopic sender = getSender(mail, true);
+            RelatedTopic sender = MailPlugin.this.getRelatedSender(mail, true);
             ChildTopics senderAssociation = sender.getRelatingAssociation().getChildTopics();
             long addressId = senderAssociation.getTopic(EMAIL_ADDRESS).getId();
             // 2.1 reference email address topic on new sender association
             ChildTopicsModel newModel = new ChildTopicsModel()
                 .putRef(EMAIL_ADDRESS, addressId);
-            associateSender(clone.getId(), sender, newModel);
+            createSenderAssociation(clone.getId(), sender, newModel);
             
             // 3 clone recipient associations  ..
             ResultList<RelatedTopic> recipientList = mail.getRelatedTopics(RECIPIENT, PARENT, CHILD, null, 0);
@@ -250,7 +248,7 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
                     ChildTopicsModel newValue = new ChildTopicsModel()
                         .putRef(RECIPIENT_TYPE, recipientAssociationModel.getTopic(RECIPIENT_TYPE).getUri())
                         .putRef(EMAIL_ADDRESS, recipientAssociationModel.getTopic(EMAIL_ADDRESS).getId());
-                    associateRecipient(clone.getId(), recipient, newValue);
+                    createRecipientAssociation(clone.getId(), recipient, newValue);
                 }
             }
             tx.success();
@@ -357,7 +355,6 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
 
     /**
      * #### Sets the default sender and signature of a mail topic after creation.
-     *      ### The concept of a "default sender" needs revision as of 4.6.
      */
     @Override
     public void postCreateTopic(Topic topic) {
@@ -530,44 +527,64 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
     }
 
     /**
+     * Double check:
+     * - Was crashing if no "signature" was configured at all?
+     * - What happens if no "Signature" matches the current E-Mail Address in use by the "Sender"
      * @param mail
      * 
      * @see MailPlugin#postCreateTopic(Topic)
      */
     private void associateDefaultSender(Topic mail) {
         Topic creator = null;
-        RelatedTopic sender = null;
+        RelatedTopic senderContact = null;
 
-        // get default sender
+        // 1) get default sender for user account
         String username = acService.getCreator(mail.getId());
         Topic creatorName = acService.getUsernameTopic(username);
         if (creatorName != null) {
             creator = creatorName.getRelatedTopic(null, CHILD, PARENT, USER_ACCOUNT);
         }
-
-        // get user account specific sender
+        // get user account specific sender (checks for a "Sender" association)
         if (creator != null) {
-            sender = getSender(creator, true);
-        } else {
-            log.info("Could not specify \"creator\" of mail and thus not sender.");
+            senderContact = MailPlugin.this.getRelatedSender(creator, true);
+            log.info("Found sender configured for this User Account..");
         }
 
-        // get the configured default sender instead
-        if (sender == null) {
-            sender = config.getDefaultSender();
+        // 2) If sender is empty, use the configured default sender instead
+        if (senderContact == null) {
+            senderContact = config.getDefaultSender();
+            log.info("Default sender not setup for this username, accessing system wide default \"From\" as sender");
         }
 
-        if (sender != null) {
+        // 3) Setup new mail with senders signature and senders Email Adress value as "From" ???
+        if (senderContact != null) {
             DeepaMehtaTransaction tx = dms.beginTx();
             try {
-                ChildTopics value = sender.getRelatingAssociation().getChildTopics();
-                long addressId = value.getTopic(EMAIL_ADDRESS).getId();
-                ChildTopicsModel newValue = new ChildTopicsModel()
-                    .putRef(EMAIL_ADDRESS, addressId); // re-use existing e-mail address topics
-                associateSender(mail.getId(), sender, newValue);
-                RelatedTopic signature = getContactSignature(sender, addressId);
-                if (signature != null) {
-                    mail.getChildTopics().getModel().add(SIGNATURE, signature.getModel());
+                log.info("Contact identified as Sending Mail " + senderContact.getSimpleValue());
+                Association association = senderContact.getRelatingAssociation().loadChildTopics();
+                ChildTopics value = association.getChildTopics();
+                // May be NULL, if no "Signature" was created for configured "Contact" AND possibly after
+                // https://github.com/mukil/dm4-mail/issues/4 - This Lead to: No mail topic could be created anymore
+                Topic eMailAddress = value.getTopic(EMAIL_ADDRESS);
+                if (eMailAddress != null) {
+                    // 3.1) Put Ref E-Mail Address into Sender Association
+                    long addressId = eMailAddress.getId();
+                    ChildTopicsModel newValue = new ChildTopicsModel()
+                        .putRef(EMAIL_ADDRESS, addressId); // re-use existing e-mail address topics
+                    // ..) Creates "Sender" Association between "Mail" and  the "Contact" ("Person" or "Institution")
+                    createSenderAssociation(mail.getId(), senderContact, newValue);
+                    // 3.2) Fetch the "Contact" signature for that "E Mail Address" value
+                    RelatedTopic signature = getContactSignature(senderContact, addressId);
+                    // 3.3) And add that Signature to that new "Mail" Tpic
+                    if (signature != null) {
+                        log.info("Found a corresponding Signature \"" + signature.getSimpleValue() + "\"");
+                        mail.getChildTopics().getModel().add(SIGNATURE, signature.getModel()); // This crashes
+                    } else {
+                        log.info("No corresponding Signature related to Sender \""
+                            + senderContact.getSimpleValue() + "\" and Email \"" + eMailAddress.getSimpleValue() + "\"");
+                    }
+                } else {
+                    log.info("NO E-Mail Address Value present for Sender, subsequently NO corresponding Signature");
                 }
                 tx.success();
             } finally {
@@ -576,11 +593,11 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
         }
     }
 
-    private Association associateRecipient(long topicId, Topic recipient, ChildTopicsModel value) {
+    private Association createRecipientAssociation(long topicId, Topic recipient, ChildTopicsModel value) {
         DeepaMehtaTransaction tx = dms.beginTx();
         try {
-            Association assoc = dms.createAssociation(new AssociationModel(RECIPIENT,//
-                new TopicRoleModel(recipient.getId(), CHILD),//
+            Association assoc = dms.createAssociation(new AssociationModel(RECIPIENT,
+                new TopicRoleModel(recipient.getId(), CHILD),
                 new TopicRoleModel(topicId, PARENT), value));
             tx.success();
             return assoc;
@@ -589,11 +606,11 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
         }
     }
 
-    private Association associateSender(long topicId, Topic sender, ChildTopicsModel value) {
+    private Association createSenderAssociation(long topicId, Topic sender, ChildTopicsModel value) {
         DeepaMehtaTransaction tx = dms.beginTx();
         try {
-            Association assoc = dms.createAssociation(new AssociationModel(SENDER,//
-                new TopicRoleModel(sender.getId(), CHILD),//
+            Association assoc = dms.createAssociation(new AssociationModel(SENDER,
+                new TopicRoleModel(sender.getId(), CHILD),
                 new TopicRoleModel(topicId, PARENT), value));
             tx.success();
             return assoc;
@@ -602,17 +619,20 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
         }
     }
 
-    private RelatedTopic getContactOfEmail(long addressId) {
+    private RelatedTopic getParentTopicViaComposition(long addressId) {
         return dms.getTopic(addressId).getRelatedTopic(COMPOSITION, CHILD, PARENT, null);
     }
 
     /** Comparing contact-signatures by "E-Mail Address"-Topic ID*/
-    private RelatedTopic getContactSignature(Topic topic, long addressId) {
-        for (RelatedTopic signature : topic.getRelatedTopics(SENDER, CHILD, PARENT, SIGNATURE, 0)) {
-            // signature had fetchComposite = true
+    private RelatedTopic getContactSignature(Topic contact, long addressId) {
+        // Fixme: The "Sender" relation is used again to model a "Signature" for a e.g. "Person" and
+        // it holds an "E-Mail Address" value chosen, identifying which signature to fetch, e.g. if a "Person"
+        // has many "E-Mail Address" entered
+        for (RelatedTopic signature : contact.getRelatedTopics(SENDER, CHILD, PARENT, SIGNATURE, 0)) {
             signature.loadChildTopics();
-            // and fetchRelatingComposite = true
             ChildTopics value = signature.getRelatingAssociation().loadChildTopics().getChildTopics();
+            log.info("Fetching Contact Signature E-Mail Address Value: " + value);
+            // The following Topic may be NULL too
             if (addressId == value.getTopic(EMAIL_ADDRESS).getId()) {
                 return signature;
             }
@@ -634,18 +654,19 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
         return null;
     }
 
-    private RelatedTopic getSender(long topicId, boolean fetchRelatingComposite) {
-        return getSender(dms.getTopic(topicId), fetchRelatingComposite);
+    private RelatedTopic getRelatedSender(long topicId, boolean fetchRelatingComposite) {
+        return getRelatedSender(dms.getTopic(topicId), fetchRelatingComposite);
     }
 
-    private RelatedTopic getSender(Topic topic, boolean fetchRelatingComposite) {
+    private RelatedTopic getRelatedSender(Topic topic, boolean fetchRelatingComposite) {
         if (!fetchRelatingComposite) {
             return topic.getRelatedTopic(SENDER, PARENT, CHILD, null);   
         } else {
             // do fetch relating composite
             RelatedTopic sender = topic.getRelatedTopic(SENDER, PARENT, CHILD, null);
             if (sender != null) { // this may be the case when a new mail is instantiated 
-                sender.getAssociation(SENDER, CHILD, PARENT, topic.getId()).loadChildTopics();
+                sender.getAssociation(SENDER, CHILD, PARENT, topic.getId());
+                sender.loadChildTopics();
             }
             return sender;
         }
