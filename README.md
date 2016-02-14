@@ -8,44 +8,45 @@ SMTP Mail plugin
 
 ## Usage
 
-the plugin adds a *Mail* topic type and a *Mail Configuration* with default settings.
+The plugin introduces the _Topic Type_ **Mail** and a **Mail Configuration** (with default settings) to your DeepaMehta 4 installation.
 
-### configure global and default mail preferences
+### Configure Global and Mail Preferences
 
-edit the configuration associated with the mail plugin
-to change the *Mail Transfer Agent Host* and choose a default *From* contact
+_Edit_ the **Mail Configuration** _Topic_ associated with the "DeepaMehta 4 Mail" Plugin Topic.
+
+There you can change the value for **Mail Transfer Agent Host** and choose a default *From* contact for mails send.
 
 you can also change the default *Recipient Type* and
 the base *Topic Type* list of autocompletion
 
-hint: after each configuration update you have to call the *Reload* action of it
+Note: After each change to the configuration you have to use the *Reload* command the Topic provides.
 
 ![configuration](https://github.com/mukil/dm4-mail/raw/master/doc/configuration.png)
 
-### configure user specific sender and signature
+### Configure a user specific sender through _Signatures_
 
-create a contact with at least one email address and a signature assigned to it
+Create a _Person_ Topic for yourself and assign an (at least one) _Email Address_ value to it.
 
-reveal your *User Account* and edit it to assign a *From* contact
+Then create a _Signature_ Topic  and assign your _Person_  (contact) Topic to it.
 
-from now on each new message is assigned to the configured sender and the signature
-of the corresponding email address
+Now reveal your *User Account* Topic and _Edit_ it. In the *From* field you can now assign your _Signature_ as the defaulf sender for all your _Mails_.
 
 ![user configuration](https://github.com/mukil/dm4-mail/raw/master/doc/userconfig.png)
 
-### create and send a mail
+### Create and Send a Mail
 
-to write a mail to a specific contact use the *Write Mail* action of the context menu
+To write a mail to a specific _Person_ or _Institution_ use the *Write Mail* command in their context menu.
 
-or use the *Mail* entry of the *Create* menu to create a new mail without recipients
+Additionally you can just _Create_ a new **Mail** and add _Recipients_ manually.
 
-in both cases, like in any other mail client,
-you can edit the recipient list with an autocompletion search
+In both cases, like in any other mail program, you can edit the recipient list just through typing the names of your contacts, an autocompletion search helps you to do so.
 
-keyboard hints: use the `<TAB>` key to select an additional recipient from the result list
-`<ENTER>` submits the page and switches in the view mode, have a look at the
-[Keyboard interaction](http://api.jqueryui.com/autocomplete/) section
-of the underlying jQuery UI component
+Tips:
+
+- You can use the `<TAB>` key to select an additional recipient from the result list
+- `<ENTER>` submits the page and switches in the view mode
+
+You can also have a look at the [Keyboard interaction](http://api.jqueryui.com/autocomplete/) section of the underlying jQuery UI component
 
 ![write mail](https://github.com/mukil/dm4-mail/raw/master/doc/mail.png)
 

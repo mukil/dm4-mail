@@ -1,100 +1,100 @@
 # plugin configuration
 {
-    topic_types: [
+    "topic_types": [
         {
-            value: "Mail Configuration Name",
-            uri: "dm4.mail.config.name",
-            data_type_uri: "dm4.core.text",
-            index_mode_uris: ["dm4.core.fulltext"],
-            view_config_topics: [
+            "value": "Mail Configuration Name",
+            "uri": "dm4.mail.config.name",
+            "data_type_uri": "dm4.core.text",
+            "index_mode_uris": ["dm4.core.fulltext"],
+            "view_config_topics": [
                 {
-                    type_uri: "dm4.webclient.view_config",
-                    childs: {
-                        dm4.webclient.simple_renderer_uri: "dm4.webclient.title_renderer"
+                    "type_uri": "dm4.webclient.view_config",
+                    "childs": {
+                        "dm4.webclient.simple_renderer_uri": "dm4.webclient.title_renderer"
                     }
                 }
             ]
         },
         {
-            value: "Mail Transfer Agent Host",
-            uri: "dm4.mail.config.host",
-            data_type_uri: "dm4.core.text"
+            "value": "Mail Transfer Agent Host",
+            "uri": "dm4.mail.config.host",
+            "data_type_uri": "dm4.core.text"
         },
         {
-            value: "Mail Configuration",
-            uri: "dm4.mail.config.type",
-            data_type_uri: "dm4.core.composite",
-            assoc_defs: [
+            "value": "Mail Configuration",
+            "uri": "dm4.mail.config.type",
+            "data_type_uri": "dm4.core.composite",
+            "assoc_defs": [
                 {
-                    assoc_type_uri:        "dm4.core.composition_def",
-                    child_cardinality_uri:  "dm4.core.one",
-                    child_type_uri:   "dm4.mail.config.name"
+                    "assoc_type_uri":        "dm4.core.composition_def",
+                    "child_cardinality_uri":  "dm4.core.one",
+                    "child_type_uri":   "dm4.mail.config.name"
                 },
                 {
-                    assoc_type_uri:        "dm4.core.composition_def",
-                    child_cardinality_uri:  "dm4.core.one",
-                    child_type_uri:   "dm4.mail.config.host"
+                    "assoc_type_uri":        "dm4.core.composition_def",
+                    "child_cardinality_uri":  "dm4.core.one",
+                    "child_type_uri":   "dm4.mail.config.host"
                 },
                 {
-                    assoc_type_uri:        "dm4.core.composition_def",
-                    child_cardinality_uri:  "dm4.core.one",
-                    child_type_uri:   "dm4.mail.from"
+                    "assoc_type_uri":        "dm4.core.composition_def",
+                    "child_cardinality_uri":  "dm4.core.one",
+                    "child_type_uri":   "dm4.mail.from"
                 },
                 { # default recipient type
-                    assoc_type_uri:        "dm4.core.aggregation_def",
-                    parent_cardinality_uri: "dm4.core.one",
-                    child_cardinality_uri:  "dm4.core.one",
-                    child_type_uri:   "dm4.mail.recipient.type"
+                    "assoc_type_uri":        "dm4.core.aggregation_def",
+                    "parent_cardinality_uri": "dm4.core.one",
+                    "child_cardinality_uri":  "dm4.core.one",
+                    "child_type_uri":   "dm4.mail.recipient.type"
                 },
                 { # auto-completion search types, should be indexed and the
                   # parent of each aggregation needs at least one dm4.contacts.email_address
                   # !!! aggregate composite list works at this level
                   # !!! webclient edit works too directly after running the migration
-                    child_type_uri:   "dm4.core.topic_type",
-                    child_cardinality_uri:  "dm4.core.many",
-                    parent_cardinality_uri: "dm4.core.many",
-                    assoc_type_uri:        "dm4.core.aggregation_def"
+                    "child_type_uri":   "dm4.core.topic_type",
+                    "child_cardinality_uri":  "dm4.core.many",
+                    "parent_cardinality_uri": "dm4.core.many",
+                    "assoc_type_uri":        "dm4.core.aggregation_def"
                 }
             ],
-            label_config: [
-                dm4.mail.config.name
+            "label_config": [
+                "dm4.mail.config.name"
             ],
-            view_config_topics: [
+            "view_config_topics": [
                 {
-                    type_uri: "dm4.webclient.view_config",
-                    childs: {
-                        dm4.webclient.icon: "/de.deepamehta.mail/images/configure.png",
-                        dm4.webclient.searchable_as_unit: true
+                    "type_uri": "dm4.webclient.view_config",
+                    "childs": {
+                        "dm4.webclient.icon": "/de.deepamehta.mail/images/configure.png",
+                        "dm4.webclient.searchable_as_unit": true
                     }
                 }
             ]
         }
     ],
-    topics: [
+    "topics": [
         { # create a local configuration and link contact label types
-            uri: "dm4.mail.config",
-            type_uri: "dm4.mail.config.type",
-            childs: {
-                dm4.mail.config.name: "Local Mail Configuration",
-                dm4.mail.config.host: "localhost",
-                dm4.mail.recipient.type: "ref_uri:dm4.mail.recipient.to",
-                dm4.core.topic_type: [
+            "uri": "dm4.mail.config",
+            "type_uri": "dm4.mail.config.type",
+            "childs": {
+                "dm4.mail.config.name": "Local Mail Configuration",
+                "dm4.mail.config.host": "localhost",
+                "dm4.mail.recipient.type": "ref_uri:dm4.mail.recipient.to",
+                "dm4.core.topic_type": [
                     "ref_uri:dm4.contacts.person_name",
                     "ref_uri:dm4.contacts.institution_name"
                 ]
             }
         }
     ],
-    associations: [
+    "associations": [
         { # associate configuration and plugin
-            type_uri: "dm4.core.association",
-            role_1: {
-                topic_uri: "de.deepamehta.mail",
-                role_type_uri: "dm4.core.default"
+            "type_uri": "dm4.core.association",
+            "role_1": {
+                "topic_uri": "de.deepamehta.mail",
+                "role_type_uri": "dm4.core.default"
             },
-            role_2: {
-                topic_uri: "dm4.mail.config",
-                role_type_uri: "dm4.core.default"
+            "role_2": {
+                "topic_uri": "dm4.mail.config",
+                "role_type_uri": "dm4.core.default"
             }
         }
     ]

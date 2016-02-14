@@ -1,272 +1,272 @@
 # mail composite and typed recipient association
 {
-    topic_types: [
+    "topic_types": [
         {
-            value: "Body",
-            uri: "dm4.mail.body",
-            data_type_uri: "dm4.core.html",
-            index_mode_uris: [ "dm4.core.fulltext" ]
+            "value": "Body",
+            "uri": "dm4.mail.body",
+            "data_type_uri": "dm4.core.html",
+            "index_mode_uris": [ "dm4.core.fulltext" ]
         },
         {
-            value: "Sent Date",
-            uri: "dm4.mail.date",
-            data_type_uri: "dm4.core.text",
-            view_config_topics: [
+            "value": "Sent Date",
+            "uri": "dm4.mail.date",
+            "data_type_uri": "dm4.core.text",
+            "view_config_topics": [
                 {
-                    type_uri: "dm4.webclient.view_config",
-                    childs: {
-                        dm4.webclient.locked: true
+                    "type_uri": "dm4.webclient.view_config",
+                    "childs": {
+                        "dm4.webclient.locked": true
                     }
                 }
             ]
         },
         {
-            value: "From",
-            uri: "dm4.mail.from",
-            data_type_uri: "dm4.core.boolean",
-            view_config_topics: [
+            "value": "From",
+            "uri": "dm4.mail.from",
+            "data_type_uri": "dm4.core.boolean",
+            "view_config_topics": [
                 { # dummy field to hold the renderer, that directly creates the sender association
-                    type_uri: "dm4.webclient.view_config",
-                    childs: {
-                        dm4.webclient.simple_renderer_uri: "dm4.mail.sender.renderer"
+                    "type_uri": "dm4.webclient.view_config",
+                    "childs": {
+                        "dm4.webclient.simple_renderer_uri": "dm4.mail.sender.renderer"
                     }
                 }
             ]
         },
         {
-            value: "Message Id",
-            uri: "dm4.mail.id",
-            data_type_uri: "dm4.core.text",
-            index_mode_uris: [ "dm4.core.fulltext" ],
-            view_config_topics: [
+            "value": "Message Id",
+            "uri": "dm4.mail.id",
+            "data_type_uri": "dm4.core.text",
+            "index_mode_uris": [ "dm4.core.fulltext" ],
+            "view_config_topics": [
                 {
-                    type_uri: "dm4.webclient.view_config",
-                    childs: {
-                        dm4.webclient.locked: true
+                    "type_uri": "dm4.webclient.view_config",
+                    "childs": {
+                        "dm4.webclient.locked": true
                     }
                 }
             ]
         },
         {
-            value: "Recipients",
-            uri: "dm4.mail.recipient.list",
-            data_type_uri: "dm4.core.boolean",
-            view_config_topics: [
+            "value": "Recipients",
+            "uri": "dm4.mail.recipient.list",
+            "data_type_uri": "dm4.core.boolean",
+            "view_config_topics": [
                 { # dummy field to hold the renderer, that directly creates recipient associations
-                    type_uri: "dm4.webclient.view_config",
-                    childs: {
-                        dm4.webclient.simple_renderer_uri: "dm4.mail.recipient.renderer"
+                    "type_uri": "dm4.webclient.view_config",
+                    "childs": {
+                        "dm4.webclient.simple_renderer_uri": "dm4.mail.recipient.renderer"
                     }
                 }
             ]
         },
         {
-            value: "Recipient Type",
-            uri: "dm4.mail.recipient.type",
-            data_type_uri: "dm4.core.text"
+            "value": "Recipient Type",
+            "uri": "dm4.mail.recipient.type",
+            "data_type_uri": "dm4.core.text"
         },
         {
-            value: "Subject",
-            uri: "dm4.mail.subject",
-            data_type_uri: "dm4.core.text",
-            index_mode_uris: [ "dm4.core.fulltext" ]
+            "value": "Subject",
+            "uri": "dm4.mail.subject",
+            "data_type_uri": "dm4.core.text",
+            "index_mode_uris": [ "dm4.core.fulltext_key", "dm4.core.fulltext" ]
         },
         {
-            value: "Name",
-            uri: "dm4.mail.signature.name",
-            data_type_uri: "dm4.core.text",
-            index_mode_uris: [ "dm4.core.fulltext" ]
+            "value": "Name",
+            "uri": "dm4.mail.signature.name",
+            "data_type_uri": "dm4.core.text",
+            "index_mode_uris": [ "dm4.core.fulltext" ]
         },
         {
-            value: "Signature Preview",
-            uri: "dm4.mail.signature.preview",
-            data_type_uri: "dm4.core.boolean",
-            view_config_topics: [
+            "value": "Signature Preview",
+            "uri": "dm4.mail.signature.preview",
+            "data_type_uri": "dm4.core.boolean",
+            "view_config_topics": [
                 { # dummy field to hold the renderer, that previews the chosen signature body
-                    type_uri: "dm4.webclient.view_config",
-                    childs: {
-                        dm4.webclient.simple_renderer_uri: "dm4.mail.signature.preview"
+                    "type_uri": "dm4.webclient.view_config",
+                    "childs": {
+                        "dm4.webclient.simple_renderer_uri": "dm4.mail.signature.preview"
                     }
                 }
             ]
         },
         {
-            value: "Signature",
-            uri: "dm4.mail.signature",
-            data_type_uri: "dm4.core.composite",
-            label_config: [ "dm4.mail.signature.name" ],
-            assoc_defs: [
+            "value": "Signature",
+            "uri": "dm4.mail.signature",
+            "data_type_uri": "dm4.core.composite",
+            "label_config": [ "dm4.mail.signature.name" ],
+            "assoc_defs": [
                 {
-                    child_type_uri:   "dm4.mail.signature.name",
-                    child_cardinality_uri:  "dm4.core.one",
-                    assoc_type_uri:        "dm4.core.composition_def"
+                    "child_type_uri":   "dm4.mail.signature.name",
+                    "child_cardinality_uri":  "dm4.core.one",
+                    "assoc_type_uri":        "dm4.core.composition_def"
                 },
                 {
-                    child_type_uri:   "dm4.mail.from",
-                    child_cardinality_uri:  "dm4.core.one",
-                    assoc_type_uri:        "dm4.core.composition_def"
+                    "child_type_uri":   "dm4.mail.from",
+                    "child_cardinality_uri":  "dm4.core.one",
+                    "assoc_type_uri":        "dm4.core.composition_def"
                 },
                 {
-                    child_type_uri:   "dm4.mail.body",
-                    child_cardinality_uri:  "dm4.core.one",
-                    assoc_type_uri:        "dm4.core.composition_def"
+                    "child_type_uri":   "dm4.mail.body",
+                    "child_cardinality_uri":  "dm4.core.one",
+                    "assoc_type_uri":        "dm4.core.composition_def"
                 }
             ],
-            view_config_topics: [
+            "view_config_topics": [
                 {
-                    type_uri: "dm4.webclient.view_config",
-                    childs: {
-                        dm4.webclient.icon: "/de.deepamehta.mail/images/signature.png",
-                        dm4.webclient.show_in_create_menu: true,
-                        dm4.webclient.searchable_as_unit: true
+                    "type_uri": "dm4.webclient.view_config",
+                    "childs": {
+                        "dm4.webclient.icon": "/de.deepamehta.mail/images/signature.png",
+                        "dm4.webclient.show_in_create_menu": true,
+                        "dm4.webclient.searchable_as_unit": true
                     }
                 }
             ]
         },
         {
-            value: "Mail",
-            uri: "dm4.mail",
-            data_type_uri: "dm4.core.composite",
-            label_config: [ "dm4.mail.subject" ],
-            assoc_defs: [
+            "value": "Mail",
+            "uri": "dm4.mail",
+            "data_type_uri": "dm4.core.composite",
+            "label_config": [ "dm4.mail.subject" ],
+            "assoc_defs": [
                 {
-                    child_type_uri:   "dm4.mail.subject",
-                    child_cardinality_uri:  "dm4.core.one",
-                    assoc_type_uri:        "dm4.core.composition_def"
+                    "child_type_uri":   "dm4.mail.subject",
+                    "child_cardinality_uri":  "dm4.core.one",
+                    "assoc_type_uri":        "dm4.core.composition_def"
                 },
                 {
-                    child_type_uri:   "dm4.mail.from",
-                    child_cardinality_uri:  "dm4.core.one",
-                    assoc_type_uri:        "dm4.core.composition_def"
+                    "child_type_uri":   "dm4.mail.from",
+                    "child_cardinality_uri":  "dm4.core.one",
+                    "assoc_type_uri":        "dm4.core.composition_def"
                 },
                 {
-                    child_type_uri:   "dm4.mail.signature",
-                    child_cardinality_uri:  "dm4.core.many", # should be one
-                    parent_cardinality_uri: "dm4.core.many",
-                    assoc_type_uri:        "dm4.core.aggregation_def",
-                    view_config_topics: [ # composite does not support custom renderer,
+                    "child_type_uri":   "dm4.mail.signature",
+                    "child_cardinality_uri":  "dm4.core.many", # should be one
+                    "parent_cardinality_uri": "dm4.core.many",
+                    "assoc_type_uri":        "dm4.core.aggregation_def",
+                    "view_config_topics": [ # composite does not support custom renderer,
                         { # use a many aggregation to inject a renderer that only supports one child
-                            type_uri: "dm4.webclient.view_config",
-                            childs: {
-                                dm4.webclient.locked: false,
-                                dm4.webclient.multi_renderer_uri: "dm4.mail.signature.renderer"
+                            "type_uri": "dm4.webclient.view_config",
+                            "childs": {
+                                "dm4.webclient.locked": false,
+                                "dm4.webclient.multi_renderer_uri": "dm4.mail.signature.renderer"
                             }
                         }
                     ]
                 },
                 {
-                    child_type_uri:   "dm4.mail.recipient.list",
-                    child_cardinality_uri:  "dm4.core.one",
-                    assoc_type_uri:        "dm4.core.composition_def"
+                    "child_type_uri":   "dm4.mail.recipient.list",
+                    "child_cardinality_uri":  "dm4.core.one",
+                    "assoc_type_uri":        "dm4.core.composition_def"
                 },
                 {
-                    child_type_uri:   "dm4.mail.body",
-                    child_cardinality_uri:  "dm4.core.one",
-                    assoc_type_uri:        "dm4.core.composition_def"
+                    "child_type_uri":   "dm4.mail.body",
+                    "child_cardinality_uri":  "dm4.core.one",
+                    "assoc_type_uri":        "dm4.core.composition_def"
                 },
                 {
-                    child_type_uri:   "dm4.mail.signature.preview",
-                    child_cardinality_uri:  "dm4.core.one",
-                    assoc_type_uri:        "dm4.core.composition_def"
+                    "child_type_uri":   "dm4.mail.signature.preview",
+                    "child_cardinality_uri":  "dm4.core.one",
+                    "assoc_type_uri":        "dm4.core.composition_def"
                 },
                 {
-                    child_type_uri:   "dm4.mail.date",
-                    child_cardinality_uri:  "dm4.core.one",
-                    assoc_type_uri:        "dm4.core.composition_def"
+                    "child_type_uri":   "dm4.mail.date",
+                    "child_cardinality_uri":  "dm4.core.one",
+                    "assoc_type_uri":        "dm4.core.composition_def"
                 },
                 {
-                    child_type_uri:   "dm4.mail.id",
-                    child_cardinality_uri:  "dm4.core.one",
-                    assoc_type_uri:        "dm4.core.composition_def",
-                    view_config_topics: [
+                    "child_type_uri":   "dm4.mail.id",
+                    "child_cardinality_uri":  "dm4.core.one",
+                    "assoc_type_uri":        "dm4.core.composition_def",
+                    "view_config_topics": [
                         { # hide the internal message ID
-                            type_uri: "dm4.webclient.view_config",
-                            childs: {
-                                dm4.webclient.hidden: true
+                            "type_uri": "dm4.webclient.view_config",
+                            "childs": {
+                                "dm4.webclient.hidden": true
                             }
                         }
                     ]
                 },
                 {
-                    child_type_uri:   "dm4.files.file",
-                    child_cardinality_uri:  "dm4.core.many",
-                    parent_cardinality_uri: "dm4.core.many",
-                    assoc_type_uri:        "dm4.core.aggregation_def",
-                    view_config_topics: [
+                    "child_type_uri":   "dm4.files.file",
+                    "child_cardinality_uri":  "dm4.core.many",
+                    "parent_cardinality_uri": "dm4.core.many",
+                    "assoc_type_uri":        "dm4.core.aggregation_def",
+                    "view_config_topics": [
                         {
-                            type_uri: "dm4.webclient.view_config",
-                            childs: {
-                                dm4.webclient.locked: false,
-                                dm4.webclient.multi_renderer_uri: "dm4.mail.attachment.renderer"
+                            "type_uri": "dm4.webclient.view_config",
+                            "childs": {
+                                "dm4.webclient.locked": false,
+                                "dm4.webclient.multi_renderer_uri": "dm4.mail.attachment.renderer"
                             }
                         }
                     ]
                 }
             ],
-            view_config_topics: [
+            "view_config_topics": [
                 {
-                    type_uri: "dm4.webclient.view_config",
-                    childs: {
-                        dm4.webclient.icon: "/de.deepamehta.mail/images/envelope.png",
-                        dm4.webclient.show_in_create_menu: true,
-                        dm4.webclient.searchable_as_unit: true
+                    "type_uri": "dm4.webclient.view_config",
+                    "childs": {
+                        "dm4.webclient.icon": "/de.deepamehta.mail/images/envelope.png",
+                        "dm4.webclient.show_in_create_menu": true,
+                        "dm4.webclient.searchable_as_unit": true
                     }
                 }
             ]
         }
     ],
-    assoc_types: [
+    "assoc_types": [
         { # sender of a mail
           # default sender in mail configuration
           # user account specific sender
           # contact specific signature
-            value: "Sender",
-            uri: "dm4.mail.sender",
-            data_type_uri: "dm4.core.composite",
-            assoc_defs: [
+            "value": "Sender",
+            "uri": "dm4.mail.sender",
+            "data_type_uri": "dm4.core.composite",
+            "assoc_defs": [
                 { # actual selected email address (direct recipient child)
-                    child_type_uri:         "dm4.contacts.email_address",
-                    child_cardinality_uri:  "dm4.core.one",
-                    parent_cardinality_uri: "dm4.core.one",
-                    assoc_type_uri:        "dm4.core.aggregation_def"
+                    "child_type_uri":           "dm4.contacts.email_address",
+                    "child_cardinality_uri":    "dm4.core.one",
+                    "parent_cardinality_uri":   "dm4.core.one",
+                    "assoc_type_uri":           "dm4.core.aggregation_def"
                 }
             ]
         },
         {
-            value: "Recipient",
-            uri: "dm4.mail.recipient",
-            data_type_uri: "dm4.core.composite",
-            assoc_defs: [
+            "value": "Recipient",
+            "uri": "dm4.mail.recipient",
+            "data_type_uri": "dm4.core.composite",
+            "assoc_defs": [
                 { # type of this recipient
-                    child_type_uri:   "dm4.mail.recipient.type",
-                    child_cardinality_uri:  "dm4.core.one",
-                    parent_cardinality_uri: "dm4.core.one",
-                    assoc_type_uri:        "dm4.core.aggregation_def"
+                    "child_type_uri":           "dm4.mail.recipient.type",
+                    "child_cardinality_uri":    "dm4.core.one",
+                    "parent_cardinality_uri":   "dm4.core.one",
+                    "assoc_type_uri":           "dm4.core.aggregation_def"
                 },
                 { # actual selected email address (direct recipient child)
-                    child_type_uri:         "dm4.contacts.email_address",
-                    child_cardinality_uri:  "dm4.core.one",
-                    parent_cardinality_uri: "dm4.core.one",
-                    assoc_type_uri:        "dm4.core.aggregation_def"
+                    "child_type_uri":           "dm4.contacts.email_address",
+                    "child_cardinality_uri":    "dm4.core.one",
+                    "parent_cardinality_uri":   "dm4.core.one",
+                    "assoc_type_uri":           "dm4.core.aggregation_def"
                 }
             ]
         }
     ],
-    topics: [ # default supported recipient types
+    "topics": [ # default supported recipient types
         {
-            value: "To",
-            uri: "dm4.mail.recipient.to",
-            type_uri: "dm4.mail.recipient.type"
+            "value": "To",
+            "uri": "dm4.mail.recipient.to",
+            "type_uri": "dm4.mail.recipient.type"
         },
         {
-            value: "Cc",
-            uri: "dm4.mail.recipient.cc",
-            type_uri: "dm4.mail.recipient.type"
+            "value": "Cc",
+            "uri": "dm4.mail.recipient.cc",
+            "type_uri": "dm4.mail.recipient.type"
         },
         {
-            value: "Bcc",
-            uri: "dm4.mail.recipient.bcc",
-            type_uri: "dm4.mail.recipient.type"
+            "value": "Bcc",
+            "uri": "dm4.mail.recipient.bcc",
+            "type_uri": "dm4.mail.recipient.type"
         }
     ]
 }
