@@ -112,12 +112,10 @@
             })
         },
         render_form: function (pages, $parent, level) {
-
             var attachments = new TopicIdCache({})
             var $attachments = $('<div>').addClass('box')
             var $add = createAddButton(attachments, $attachments)
             // var topic_renderer = dm4c.get_page_renderer('dm4.webclient.topic_renderer')
-
             $.each(pages, function (p, page) {
                 if (page.object.id !== -1) {
                     var attachment = page.object
@@ -127,15 +125,12 @@
                     $attachments.append($attachment)
                 }
             })
-
             dm4c.render.field_label('Attachments', $parent)
             $parent.append($attachments).append($('<div>').addClass('add-button').append($add))
-
             return function () {
                 return attachments.getValues()
             }
         }
-
     })
 
 }(jQuery, dm4c))

@@ -15,6 +15,32 @@ import de.deepamehta.plugins.mail.StatusReport;
 
 public interface MailService {
 
+    // DM 4 Core URIs
+    static final String AGGREGATION = "dm4.core.aggregation";
+    static final String COMPOSITION = "dm4.core.composition";
+    static final String CHILD = "dm4.core.child";
+    static final String CHILD_TYPE = "dm4.core.child_type";
+    static final String TOPIC_TYPE = "dm4.core.topic_type";
+    static final String PARENT = "dm4.core.parent";
+    static final String PARENT_TYPE = "dm4.core.parent_type";
+    // ACL / User Account URIs
+    static final String USER_ACCOUNT = "dm4.accesscontrol.user_account";
+    // File URIs
+    static final String FILE = "dm4.files.file";
+    static final String ATTACHMENTS = "attachments";
+    // Mail URIs
+    static final String BODY = "dm4.mail.body";
+    static final String EMAIL_ADDRESS = "dm4.contacts.email_address";
+    static final String DATE = "dm4.mail.date";
+    static final String FROM = "dm4.mail.from";
+    static final String MAIL = "dm4.mail";
+    static final String MESSAGE_ID = "dm4.mail.id";
+    static final String RECIPIENT = "dm4.mail.recipient";
+    static final String RECIPIENT_TYPE = "dm4.mail.recipient.type";
+    static final String SENDER = "dm4.mail.sender";
+    static final String SIGNATURE = "dm4.mail.signature";
+    static final String SUBJECT = "dm4.mail.subject";
+
     /**
      * Returns parent of each search type.
      * 

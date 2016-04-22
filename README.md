@@ -16,8 +16,7 @@ _Edit_ the **Mail Configuration** _Topic_ associated with the "DeepaMehta 4 Mail
 
 There you can change the value for **Mail Transfer Agent Host** and choose a default *From* contact for mails send.
 
-you can also change the default *Recipient Type* and
-the base *Topic Type* list of autocompletion
+You can also change the default *Recipient Type* and the list of *Topic Types* used during autocompletion.
 
 Note: After each change to the configuration you have to use the *Reload* command the Topic provides.
 

@@ -44,29 +44,6 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
 
     private static Logger log = Logger.getLogger(MailPlugin.class.getName());
 
-    // URI constants
-
-    public static final String AGGREGATION = "dm4.core.aggregation";
-    public static final String COMPOSITION = "dm4.core.composition";
-    public static final String CHILD = "dm4.core.child";
-    public static final String CHILD_TYPE = "dm4.core.child_type";
-    public static final String TOPIC_TYPE = "dm4.core.topic_type";
-    public static final String PARENT = "dm4.core.parent";
-    public static final String PARENT_TYPE = "dm4.core.parent_type";
-    public static final String FILE = "dm4.files.file";
-    public static final String ATTACHMENTS = "attachments";
-    public static final String BODY = "dm4.mail.body";
-    public static final String EMAIL_ADDRESS = "dm4.contacts.email_address";
-    public static final String DATE = "dm4.mail.date";
-    public static final String FROM = "dm4.mail.from";
-    public static final String MAIL = "dm4.mail";
-    public static final String MESSAGE_ID = "dm4.mail.id";
-    public static final String RECIPIENT = "dm4.mail.recipient";
-    public static final String RECIPIENT_TYPE = "dm4.mail.recipient.type";
-    public static final String SENDER = "dm4.mail.sender";
-    public static final String SIGNATURE = "dm4.mail.signature";
-    public static final String SUBJECT = "dm4.mail.subject";
-    public static final String USER_ACCOUNT = "dm4.accesscontrol.user_account";
     // File Repository Constants
     public static final String FILEREPO_BASE_URI_NAME           = "filerepo";
     public static final String FILEREPO_ATTACHMENTS_SUBFOLDER   = "attachments";
@@ -382,6 +359,11 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
 
     @Override
     public StatusReport send(Mail mail) {
+
+        // Investigations due to "mx0.infokitchen.net[80.237.138.5] refused to talk to me: 451-HELO/EHLO must contain "
+        // .. a FQDN or IP literal 451 Please see RFC 2821 section 4.1.1.1)
+        System.setProperty("mail.smtp.localhost", "mail.mikromedia.de");
+        log.info("SMTP Localhost (EHLO) Name: " + System.getProperty("mail.smtp.localhost"));
 
         // Hot Fix: Classloader issue we have in OSGi since using Pax web?
         // Latest issue was ..
