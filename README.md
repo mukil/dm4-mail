@@ -51,9 +51,10 @@ You can also have a look at the [Keyboard interaction](http://api.jqueryui.com/a
 
 ### Release History
 
-0.3.1, UPCOMING
+0.3.1, Apr 25, 2016
 
-* DeepaMehta 4.7 compatible
+* No improvments usability or feature wise
+* DeepaMehta 4.7 compatible: handles per-workspace file-iepositories
 
 0.3.0-SNAPSHOT, Aug 28, 2015
 
@@ -69,5 +70,5 @@ You can also have a look at the [Keyboard interaction](http://api.jqueryui.com/a
 
 Authors
 -------
-Danny Graf, Malte Reißg 2012-2015
+Danny Graf and Malte Reißig 2012-2016
 
