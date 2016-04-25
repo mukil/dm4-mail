@@ -362,8 +362,8 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
 
         // Investigations due to "mx0.infokitchen.net[80.237.138.5] refused to talk to me: 451-HELO/EHLO must contain "
         // .. a FQDN or IP literal 451 Please see RFC 2821 section 4.1.1.1)
-        System.setProperty("mail.smtp.localhost", "mail.mikromedia.de");
-        log.info("SMTP Localhost (EHLO) Name: " + System.getProperty("mail.smtp.localhost"));
+        // System.setProperty("mail.smtp.localhost", "mail.mikromedia.de");
+        // log.info("SMTP Localhost (EHLO) Name: " + System.getProperty("mail.smtp.localhost"));
 
         // Hot Fix: Classloader issue we have in OSGi since using Pax web?
         // Latest issue was ..
