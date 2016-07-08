@@ -6,19 +6,18 @@ import de.deepamehta.core.RelatedTopic;
 import de.deepamehta.core.Topic;
 import de.deepamehta.core.model.*;
 import de.deepamehta.core.osgi.PluginActivator;
-import de.deepamehta.core.service.DeepaMehtaService;
 import de.deepamehta.core.service.Inject;
-import de.deepamehta.core.service.ResultList;
 import de.deepamehta.core.service.Transactional;
 import de.deepamehta.core.service.event.PostCreateTopicListener;
 import de.deepamehta.core.storage.spi.DeepaMehtaTransaction;
-import de.deepamehta.plugins.accesscontrol.AccessControlService;
-import de.deepamehta.plugins.files.FilesPlugin;
-import de.deepamehta.plugins.files.FilesService;
-import de.deepamehta.plugins.files.ItemKind;
-import de.deepamehta.plugins.files.ResourceInfo;
-import de.deepamehta.plugins.files.StoredFile;
-import de.deepamehta.plugins.files.UploadedFile;
+import de.deepamehta.accesscontrol.AccessControlService;
+import de.deepamehta.core.service.CoreService;
+import de.deepamehta.files.FilesPlugin;
+import de.deepamehta.files.FilesService;
+import de.deepamehta.files.ItemKind;
+import de.deepamehta.files.ResourceInfo;
+import de.deepamehta.files.StoredFile;
+import de.deepamehta.files.UploadedFile;
 import de.deepamehta.plugins.mail.service.MailService;
 import java.io.File;
 import org.apache.commons.mail.EmailAttachment;
@@ -77,7 +76,7 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
     public Association associateRecipient(long mailId, long addressId, RecipientType type) {
         log.info("Associate " + mailId + " with recipient address " + addressId);
         // ### create value of the recipient association (#593 ref?)
-        ChildTopicsModel value = new ChildTopicsModel()//
+        ChildTopicsModel value = mf.newChildTopicsModel()//
                 .putRef(RECIPIENT_TYPE, type.getUri())//
                 .putRef(EMAIL_ADDRESS, addressId);
         // get and update or create a new recipient association
@@ -94,10 +93,11 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
     @Override
     public void associateValidatedRecipients(long mailId, List<Topic> recipients) {
         for (Topic recipient : recipients) {
-            Topic topic = dms.getTopic(recipient.getId()).loadChildTopics();
-            if (topic.getChildTopics().has(EMAIL_ADDRESS)) {
+            Topic topic = dm4.getTopic(recipient.getId()).loadChildTopics();
+            List<RelatedTopic> emailAddresses = topic.getChildTopics().getTopicsOrNull(EMAIL_ADDRESS);
+            if (emailAddresses != null) {
                 String personal = recipient.getSimpleValue().toString();
-                for (Topic email : topic.getChildTopics().getTopics(EMAIL_ADDRESS)) {
+                for (Topic email : emailAddresses) {
                     String address = email.getSimpleValue().toString();
                     try {
                         new InternetAddress(address, personal).validate();
@@ -127,7 +127,7 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
         log.info("Associate Mail " + mailId + " with E-Mail Address Topic (identifying a Sender) " + addressId);
 
         // create value of sender association (#593 ref?)
-        ChildTopicsModel value = new ChildTopicsModel().putRef(EMAIL_ADDRESS, addressId);
+        ChildTopicsModel value = mf.newChildTopicsModel().putRef(EMAIL_ADDRESS, addressId);
 
         // find existing sender association
         RelatedTopic sender = getParentTopicViaComposition(addressId);
@@ -137,10 +137,10 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
             return createSenderAssociation(mailId, sender, value);
         } else { // update or delete the old sender
             Association association = getSenderAssociation(mailId, oldSender.getId());
-            DeepaMehtaTransaction tx = dms.beginTx();
+            DeepaMehtaTransaction tx = dm4.beginTx();
             try {
                 if (sender.getId() != oldSender.getId()) { // delete the old one
-                    dms.deleteAssociation(association.getId());
+                    dm4.deleteAssociation(association.getId());
                     association = createSenderAssociation(mailId, sender, value);
                 } else { // update composite
                     association.setChildTopics(value);
@@ -181,39 +181,39 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
     @Path("/{mail}/copy")
     public Topic copyMail(@PathParam("mail") long mailId, @QueryParam("recipients") boolean includeRecipients) {
         log.info("Copy mail " + mailId);
-        DeepaMehtaTransaction tx = dms.beginTx();
+        DeepaMehtaTransaction tx = dm4.beginTx();
         try {
             // 1 clone mail ..
-            Topic mail = dms.getTopic(mailId).loadChildTopics();
+            Topic mail = dm4.getTopic(mailId).loadChildTopics();
             ChildTopicsModel oldMail = mail.getModel().getChildTopicsModel();
             String subject = oldMail.getString(SUBJECT);
             String mailBody = oldMail.getString(BODY);
             boolean fromDummy = oldMail.getBoolean(FROM);
             String sentDate = "", messageId = ""; // nullify date and ID
             // 1.1 re-use existing signatures (there is just one but see migration1 ###)
-            List<RelatedTopicModel> signatures = oldMail.getTopics(SIGNATURE);
+            List<? extends RelatedTopicModel> signatures = oldMail.getTopicsOrNull(SIGNATURE);
             long signatureId = -1;
-            for (TopicModel signature : signatures) {
+            for (RelatedTopicModel signature : signatures) {
                 signatureId = signature.getId();
             }
-            ChildTopicsModel clonedMail = new ChildTopicsModel()
+            ChildTopicsModel clonedMail = mf.newChildTopicsModel()
                 .put(SUBJECT, subject).put(BODY, mailBody)
                 .put(FROM, fromDummy).put(DATE, sentDate).put(MESSAGE_ID, messageId)
                 .addRef(SIGNATURE, signatureId); // do not copy signatures..
-            TopicModel model = new TopicModel(MAIL, clonedMail);
-            Topic clone = dms.createTopic(model);
-            
+            TopicModel model = mf.newTopicModel(MAIL, clonedMail);
+            Topic clone = dm4.createTopic(model);
+
             // 2 clone sender association ..
             RelatedTopic sender = MailPlugin.this.getRelatedSender(mail, true);
             ChildTopics senderAssociation = sender.getRelatingAssociation().getChildTopics();
             long addressId = senderAssociation.getTopic(EMAIL_ADDRESS).getId();
             // 2.1 reference email address topic on new sender association
-            ChildTopicsModel newModel = new ChildTopicsModel()
+            ChildTopicsModel newModel = mf.newChildTopicsModel()
                 .putRef(EMAIL_ADDRESS, addressId);
             createSenderAssociation(clone.getId(), sender, newModel);
             
             // 3 clone recipient associations  ..
-            ResultList<RelatedTopic> recipientList = mail.getRelatedTopics(RECIPIENT, PARENT, CHILD, null, 0);
+            List<RelatedTopic> recipientList = mail.getRelatedTopics(RECIPIENT, PARENT, CHILD, null);
             // migration note: fetchRelatingComposite = true
             if (includeRecipients) {
                 for (RelatedTopic recipient : recipientList) {
@@ -221,8 +221,8 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
                         continue; // sender or something else found
                     }
                     // 3.1 re-use existing recipient types
-                    Association recipientAssociationModel = dms.getAssociation(recipient.getId()).loadChildTopics();
-                    ChildTopicsModel newValue = new ChildTopicsModel()
+                    Association recipientAssociationModel = dm4.getAssociation(recipient.getId()).loadChildTopics();
+                    ChildTopicsModel newValue = mf.newChildTopicsModel()
                         .putRef(RECIPIENT_TYPE, recipientAssociationModel.getTopic(RECIPIENT_TYPE).getUri())
                         .putRef(EMAIL_ADDRESS, recipientAssociationModel.getTopic(EMAIL_ADDRESS).getId());
                     createRecipientAssociation(clone.getId(), recipient, newValue);
@@ -246,12 +246,13 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
     @Path("/write/{recipient}")
     public Topic writeTo(@PathParam("recipient") long recipientId) {
         log.info("Write a mail to recipient " + recipientId);
-        DeepaMehtaTransaction tx = dms.beginTx();
+        DeepaMehtaTransaction tx = dm4.beginTx();
         try {
-            Topic mail = dms.createTopic(new TopicModel(MAIL));
-            Topic recipient = dms.getTopic(recipientId).loadChildTopics();
-            if (recipient.getChildTopics().has(EMAIL_ADDRESS)) {
-                for (Topic address : recipient.getChildTopics().getTopics(EMAIL_ADDRESS)) {
+            Topic mail = dm4.createTopic(mf.newTopicModel(MAIL));
+            Topic recipient = dm4.getTopic(recipientId).loadChildTopics();
+            List<RelatedTopic> emailAddresses = recipient.getChildTopics().getTopicsOrNull(EMAIL_ADDRESS);
+            if (emailAddresses != null) {
+                for (RelatedTopic address : emailAddresses) {
                     associateRecipient(mail.getId(), address.getId(),//
                             config.getDefaultRecipientType());
                 }
@@ -295,7 +296,7 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
      */
     @GET
     @Path("/recipient/types")
-    public ResultList<RelatedTopic> getRecipientTypes() {
+    public List<Topic> getRecipientTypes() {
         return config.getRecipientTypes();
     }
 
@@ -304,9 +305,9 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
      */
     @GET
     @Path("/search/parents")
-    public ResultList<Topic> listSearchParentTypes() {
+    public List<Topic> listSearchParentTypes() {
         Collection<Topic> parents = getSearchParentTypes();
-        return new ResultList<Topic>(parents.size(), new ArrayList<Topic>(parents));
+        return new ArrayList<Topic>(parents);
     }
 
     @Override
@@ -325,8 +326,8 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
     @Path("/config/load")
     public Topic loadConfiguration() {
         log.info("Load mail configuration");
-        config = new MailConfigurationCache(dms);
-        autocomplete = new Autocomplete(dms, config);
+        config = new MailConfigurationCache(dm4);
+        autocomplete = new Autocomplete(dm4, config);
         return config.getTopic();
     }
 
@@ -336,7 +337,7 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
     @Override
     public void postCreateTopic(Topic topic) {
         if (topic.getTypeUri().equals(MAIL)) {
-            if (topic.getChildTopics().has(FROM) == false) { // new mail
+            if (topic.getChildTopics().getTopicOrNull(FROM) == null) { // new mail
                 associateDefaultSender(topic);
             } else { // copied mail
                 Topic from = topic.getChildTopics().getTopic(FROM);
@@ -354,7 +355,7 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
     @Path("/{mail}/send")
     public StatusReport send(@PathParam("mail") long mailId) {
         log.info("Send mail " + mailId);
-        return send(new Mail(mailId, dms));
+        return send(new Mail(mailId, dm4));
     }
 
     @Override
@@ -457,7 +458,7 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
                 reportException(statusReport, Level.SEVERE, MailError.UPDATE, e);
             } finally {
                 // Fix: Classloader issue we have in OSGi since using Pax web
-                Thread.currentThread().setContextClassLoader(DeepaMehtaService.class.getClassLoader());
+                Thread.currentThread().setContextClassLoader(CoreService.class.getClassLoader());
                 log.info("AfterSend: Set ClassLoader back " + Thread.currentThread().getContextClassLoader().toString());
             }
         }
@@ -540,7 +541,7 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
 
         // 3) Setup new mail with senders signature and senders Email Adress value as "From" ???
         if (senderContact != null) {
-            DeepaMehtaTransaction tx = dms.beginTx();
+            DeepaMehtaTransaction tx = dm4.beginTx();
             try {
                 log.info("Contact identified as Sending Mail " + senderContact.getSimpleValue());
                 Association association = senderContact.getRelatingAssociation().loadChildTopics();
@@ -551,7 +552,7 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
                 if (eMailAddress != null) {
                     // 3.1) Put Ref E-Mail Address into Sender Association
                     long addressId = eMailAddress.getId();
-                    ChildTopicsModel newValue = new ChildTopicsModel()
+                    ChildTopicsModel newValue = mf.newChildTopicsModel()
                         .putRef(EMAIL_ADDRESS, addressId); // re-use existing e-mail address topics
                     // ..) Creates "Sender" Association between "Mail" and  the "Contact" ("Person" or "Institution")
                     createSenderAssociation(mail.getId(), senderContact, newValue);
@@ -576,11 +577,11 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
     }
 
     private Association createRecipientAssociation(long topicId, Topic recipient, ChildTopicsModel value) {
-        DeepaMehtaTransaction tx = dms.beginTx();
+        DeepaMehtaTransaction tx = dm4.beginTx();
         try {
-            Association assoc = dms.createAssociation(new AssociationModel(RECIPIENT,
-                new TopicRoleModel(recipient.getId(), CHILD),
-                new TopicRoleModel(topicId, PARENT), value));
+            Association assoc = dm4.createAssociation(mf.newAssociationModel(RECIPIENT,
+                mf.newTopicRoleModel(recipient.getId(), CHILD),
+                mf.newTopicRoleModel(topicId, PARENT), value));
             tx.success();
             return assoc;
         } finally {
@@ -589,11 +590,11 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
     }
 
     private Association createSenderAssociation(long topicId, Topic sender, ChildTopicsModel value) {
-        DeepaMehtaTransaction tx = dms.beginTx();
+        DeepaMehtaTransaction tx = dm4.beginTx();
         try {
-            Association assoc = dms.createAssociation(new AssociationModel(SENDER,
-                new TopicRoleModel(sender.getId(), CHILD),
-                new TopicRoleModel(topicId, PARENT), value));
+            Association assoc = dm4.createAssociation(mf.newAssociationModel(SENDER,
+                mf.newTopicRoleModel(sender.getId(), CHILD),
+                mf.newTopicRoleModel(topicId, PARENT), value));
             tx.success();
             return assoc;
         } finally {
@@ -602,7 +603,7 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
     }
 
     private RelatedTopic getParentTopicViaComposition(long addressId) {
-        return dms.getTopic(addressId).getRelatedTopic(COMPOSITION, CHILD, PARENT, null);
+        return dm4.getTopic(addressId).getRelatedTopic(COMPOSITION, CHILD, PARENT, null);
     }
 
     /** Comparing contact-signatures by "E-Mail Address"-Topic ID*/
@@ -610,7 +611,7 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
         // Fixme: The "Sender" relation is used again to model a "Signature" for a e.g. "Person" and
         // it holds an "E-Mail Address" value chosen, identifying which signature to fetch, e.g. if a "Person"
         // has many "E-Mail Address" entered
-        for (RelatedTopic signature : contact.getRelatedTopics(SENDER, CHILD, PARENT, SIGNATURE, 0)) {
+        for (RelatedTopic signature : contact.getRelatedTopics(SENDER, CHILD, PARENT, SIGNATURE)) {
             signature.loadChildTopics();
             ChildTopics value = signature.getRelatingAssociation().loadChildTopics().getChildTopics();
             log.info("Fetching Contact Signature E-Mail Address Value: " + value);
@@ -623,9 +624,9 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
     }
 
     private Association getRecipientAssociation(long topicId, long addressId, long recipientId) {
-        for (Association recipient : dms.getAssociations(topicId, recipientId)) {
+        for (Association recipient : dm4.getAssociations(topicId, recipientId)) {
             if (recipient.getTypeUri().equals(RECIPIENT)) {
-                Association association = dms.getAssociation(recipient.getId());
+                Association association = dm4.getAssociation(recipient.getId());
                 association.loadChildTopics();
                 Topic address = association.getChildTopics().getTopic(EMAIL_ADDRESS);
                 if (address.getId() == addressId) {
@@ -637,7 +638,7 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
     }
 
     private RelatedTopic getRelatedSender(long topicId, boolean fetchRelatingComposite) {
-        return getRelatedSender(dms.getTopic(topicId), fetchRelatingComposite);
+        return getRelatedSender(dm4.getTopic(topicId), fetchRelatingComposite);
     }
 
     private RelatedTopic getRelatedSender(Topic topic, boolean fetchRelatingComposite) {
@@ -655,7 +656,7 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
     }
 
     private Association getSenderAssociation(long topicId, long senderId) {
-        return dms.getAssociation(SENDER, topicId, senderId, PARENT, CHILD).loadChildTopics();
+        return dm4.getAssociation(SENDER, topicId, senderId, PARENT, CHILD).loadChildTopics();
     }
 
     private void mapRecipients(HtmlEmail email, Map<RecipientType, List<InternetAddress>> recipients)

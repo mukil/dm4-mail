@@ -15,7 +15,7 @@ import de.deepamehta.core.Association;
 import de.deepamehta.core.ChildTopics;
 import de.deepamehta.core.RelatedTopic;
 import de.deepamehta.core.Topic;
-import de.deepamehta.core.service.DeepaMehtaService;
+import de.deepamehta.core.service.CoreService;
 import de.deepamehta.core.storage.spi.DeepaMehtaTransaction;
 
 /**
@@ -23,11 +23,11 @@ import de.deepamehta.core.storage.spi.DeepaMehtaTransaction;
  */
 public class Mail {
 
-    private final DeepaMehtaService dms;
+    private final CoreService dms;
 
     private final Topic topic;
 
-    public Mail(long topicId, DeepaMehtaService dms) {
+    public Mail(long topicId, CoreService dms) {
         this.dms = dms;
         this.topic = dms.getTopic(topicId).loadChildTopics();
     }
@@ -38,12 +38,12 @@ public class Mail {
             throw new IllegalArgumentException("Body of mail is empty");
         }
 
-        if (topic.getChildTopics().has(SIGNATURE) == false) {
+        if (topic.getChildTopics().getTopicsOrNull(SIGNATURE) == null) {
             throw new IllegalArgumentException("Signature of mail not found");
         } else {
             List<RelatedTopic> signature = topic.getChildTopics().getTopics(SIGNATURE);
             ChildTopics value = signature.get(0).getChildTopics();
-            if (value.has(BODY) == false) {
+            if (value.getTopicOrNull(BODY) == null) {
                 throw new IllegalArgumentException("Signature of mail is empty");
             } else {
                 String sigBody = value.getTopic(BODY).getSimpleValue().toString();
@@ -59,7 +59,7 @@ public class Mail {
         Set<String> invalid = new HashSet<String>();
         RecipientsByType results = new RecipientsByType();
 
-        for (RelatedTopic recipient : topic.getRelatedTopics(RECIPIENT, PARENT, CHILD, null, 0)) {
+        for (RelatedTopic recipient : topic.getRelatedTopics(RECIPIENT, PARENT, CHILD, null)) {
             String personal = recipient.getSimpleValue().toString();
 
             for (Association association : dms.getAssociations(topic.getId(), recipient.getId())) {
@@ -70,11 +70,11 @@ public class Mail {
                 // get and validate recipient association
                 ChildTopics value = dms.getAssociation(association.getId())
                     .loadChildTopics().getChildTopics(); // re-fetch with value
-                if (value.has(RECIPIENT_TYPE) == false) {
+                if (value.getTopicOrNull(RECIPIENT_TYPE) == null) {
                     invalid.add("Recipient type of \"" + personal + "\" is not defined");
                     continue;
                 }
-                if (value.has(EMAIL_ADDRESS) == false) {
+                if (value.getTopicOrNull(EMAIL_ADDRESS) == null) {
                     invalid.add("Recipient \"" + personal + "\" has no email address");
                     continue;
                 }
@@ -136,7 +136,7 @@ public class Mail {
 
     public Set<Long> getAttachmentIds() {
         Set<Long> attachments = new HashSet<Long>();
-        for (RelatedTopic attachment : topic.getRelatedTopics(AGGREGATION, PARENT, CHILD, FILE, 0)) {
+        for (RelatedTopic attachment : topic.getRelatedTopics(AGGREGATION, PARENT, CHILD, FILE)) {
             attachments.add(attachment.getId());
         }
         return attachments;

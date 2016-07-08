@@ -5,7 +5,7 @@ dm4c.add_plugin('dm4.mail.plugin', function () {
     }
 
     function getSearchableParentTypes() {
-        return dm4c.restc.request('GET', '/mail/search/parents').items
+        return dm4c.restc.request('GET', '/mail/search/parents')
     }
 
     function reloadConfiguration() {

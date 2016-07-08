@@ -13,8 +13,8 @@ import java.util.logging.Logger;
 import de.deepamehta.core.RelatedTopic;
 import de.deepamehta.core.Topic;
 import de.deepamehta.core.model.SimpleValue;
-import de.deepamehta.core.service.DeepaMehtaService;
-import de.deepamehta.core.service.ResultList;
+import de.deepamehta.core.service.CoreService;
+import java.util.List;
 
 /**
  * Reveals and caches mail configuration parts.
@@ -29,18 +29,18 @@ class MailConfigurationCache {
     public static final String SMTP_HOST = "dm4.mail.config.host";
 
     private Topic config = null;
-    private final DeepaMehtaService dms;
+    private final CoreService dms;
     private RecipientType defaultRecipientType = null;
     private RelatedTopic defaultSender = null;
     private boolean defaultSenderIsNull = false;
-    private ResultList<RelatedTopic> recipientTypes;
+    private List<Topic> recipientTypes;
     private Set<String> recipientTypeUris;
     private Map<String, Topic> searchParentTypes;
-    private ResultList<RelatedTopic> searchTypes;
+    private List<RelatedTopic> searchTypes;
     private Set<String> searchTypeUris;
     private String smtpHost = null;
 
-    public MailConfigurationCache(DeepaMehtaService dms) {
+    public MailConfigurationCache(CoreService dms) {
         this.dms = dms;
     }
 
@@ -65,7 +65,7 @@ class MailConfigurationCache {
     private Topic getConfiguration() {
         if (config == null) {
             log.info("Access mail plugin configuration");
-            config = dms.getTopic("uri", new SimpleValue(MAIL_CONFIG)).loadChildTopics();
+            config = dms.getTopicByUri(MAIL_CONFIG).loadChildTopics();
         }
         return config;
     }
@@ -94,10 +94,10 @@ class MailConfigurationCache {
         return defaultSender;
     }
 
-    public ResultList<RelatedTopic> getRecipientTypes() {
+    public List<Topic> getRecipientTypes() {
         if (recipientTypes == null) {
             log.info("Get recipient types");
-            recipientTypes = dms.getTopics(RECIPIENT_TYPE, 0);
+            recipientTypes = dms.getTopicsByType(RECIPIENT_TYPE);
         }
         return recipientTypes;
     }
@@ -117,12 +117,12 @@ class MailConfigurationCache {
         return revealSearchParentTypes().values();
     }
 
-    public ResultList<RelatedTopic> getSearchTypes() {
+    public List<RelatedTopic> getSearchTypes() {
         if (searchTypes == null) {
             log.info("Get search types");
             // get aggregated composite search types
             // FIXME use a specific association type and field renderer
-            searchTypes = getConfiguration().getRelatedTopics(AGGREGATION, PARENT, CHILD, TOPIC_TYPE, 0);
+            searchTypes = getConfiguration().getRelatedTopics(AGGREGATION, PARENT, CHILD, TOPIC_TYPE);
         }
         return searchTypes;
     }

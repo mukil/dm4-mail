@@ -14,13 +14,13 @@ import de.deepamehta.core.RelatedTopic;
 import de.deepamehta.core.Topic;
 import de.deepamehta.core.model.RelatedTopicModel;
 import de.deepamehta.core.model.TopicModel;
-import de.deepamehta.core.service.DeepaMehtaService;
+import de.deepamehta.core.service.CoreService;
 
 public class Autocomplete {
 
     private static Logger log = Logger.getLogger(Autocomplete.class.getName());
 
-    private final DeepaMehtaService dms;
+    private final CoreService dms;
 
     private final MailConfigurationCache config;
 
@@ -31,7 +31,7 @@ public class Autocomplete {
         }
     };
 
-    public Autocomplete(DeepaMehtaService dms, MailConfigurationCache config) {
+    public Autocomplete(CoreService dms, MailConfigurationCache config) {
         this.dms = dms;
         this.config = config;
     }
@@ -57,7 +57,7 @@ public class Autocomplete {
         Map<Long, TopicModel> addresses = new HashMap<Long, TopicModel>();
         for (Topic result : parents.values()) {
             Topic parent = dms.getTopic(result.getId()).loadChildTopics();
-            List<RelatedTopicModel> mailAdresses = getEmailAddresses(parent);
+            List<? extends RelatedTopicModel> mailAdresses = getEmailAddresses(parent);
             if (mailAdresses != null) {
                 for (TopicModel address : getEmailAddresses(parent)) {
                     putAddress(addresses, parent, address);
@@ -89,9 +89,9 @@ public class Autocomplete {
      * 
      * @return list of mail addresses with at minimum one empty address
      */
-    private List<RelatedTopicModel> getEmailAddresses(Topic topic) {
+    private List<? extends RelatedTopicModel> getEmailAddresses(Topic topic) {
         // FIXME attached value should support add(...) of child compositions
-        if (topic.getChildTopics().has(EMAIL_ADDRESS) == false) {
+        if (topic.getChildTopics().getTopicsOrNull(EMAIL_ADDRESS) == null) {
             log.warning("Composite of " + topic.getSimpleValue() + " contains NO EMAIL ADDRESS");
             return null;
         }

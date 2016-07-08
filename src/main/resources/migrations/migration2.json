@@ -85,17 +85,17 @@
             }
         }
     ],
-    "associations": [
-        { # associate configuration and plugin
-            "type_uri": "dm4.core.association",
-            "role_1": {
-                "topic_uri": "de.deepamehta.mail",
-                "role_type_uri": "dm4.core.default"
-            },
-            "role_2": {
-                "topic_uri": "dm4.mail.config",
-                "role_type_uri": "dm4.core.default"
-            }
-        }
-    ]
+    #"associations": [
+    #    { # associate configuration and plugin
+    #        "type_uri": "dm4.core.association",
+    #        "role_1": {
+    #            "topic_uri": "de.deepamehta.mail",
+    #            "role_type_uri": "dm4.core.default"
+    #        },
+    #        "role_2": {
+    #           "topic_uri": "dm4.mail.config",
+    #            "role_type_uri": "dm4.core.default"
+    #        }
+    #    }
+    # ]
 }

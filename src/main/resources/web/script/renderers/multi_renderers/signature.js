@@ -2,7 +2,7 @@
 (function ($, dm4c) {
 
     function getAllSignatures() {
-        return dm4c.restc.get_topics('dm4.mail.signature', false, true).items
+        return dm4c.restc.get_topics('dm4.mail.signature', false, true)
     }
 
     function getSignatureIdOfMail(mail) {
@@ -33,29 +33,29 @@
             }
         },
         render_form: function (pages, $parent, level) {
-            var deselectedId = -1,
-                    selectedId = getSignatureIdOfMail(pages[0].parent.object),
-                    menu = createSignatureMenu(selectedId, function (signature) {
-                        // value contains a new selection?
-                        if (selectedId !== signature.value) {
-                            if (deselectedId === -1) { // save the old selection once
-                                deselectedId = selectedId
-                            } else if (deselectedId === signature.value) {
-                                // the old one is selected again
-                                deselectedId = -1
-                            }
-                        }
-                        selectedId = signature.value
-                        dm4c.fire_event('render_mail_signature', selectedId)
-                    })
+            var deselectedId = -1
+            var selectedId = getSignatureIdOfMail(pages[0].parent.object)
+            var menu = createSignatureMenu(selectedId, function (signature) {
+                // value contains a new selection?
+                if (selectedId !== signature.value) {
+                    if (deselectedId === -1) { // save the old selection once
+                        deselectedId = selectedId
+                    } else if (deselectedId === signature.value) {
+                        // the old one is selected again
+                        deselectedId = -1
+                    }
+                }
+                selectedId = signature.value
+                dm4c.fire_event('render_mail_signature', selectedId)
+            })
             $parent.append(menu.dom)
 
             return function () { // creates aggregation of last selection
                 var values = []
                 if (selectedId !== -1) {
-                    values.push(dm4c.REF_PREFIX + selectedId)
+                    values.push(dm4c.REF_ID_PREFIX + "" + selectedId)
                     if (deselectedId !== -1) {
-                        values.push(dm4c.DEL_PREFIX + deselectedId)
+                        values.push(dm4c.DEL_ID_PREFIX + "" + deselectedId)
                     }
                 }
                 return values

@@ -7,7 +7,7 @@
             my_role_type_uri: 'dm4.core.child',
             others_role_type_uri: 'dm4.core.parent',
             others_topic_type_uri: parentUri
-        }).items[0]
+        })[0]
     }
 
     function getSenderTopics(topicId) {
@@ -15,7 +15,7 @@
             assoc_type_uri: 'dm4.mail.sender',
             my_role_type_uri: 'dm4.core.parent',
             others_role_type_uri: 'dm4.core.child'
-        }).items
+        })
     }
 
     function getSenderAssociation(topicId, senderId) {

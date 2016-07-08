@@ -15,6 +15,12 @@
         <version>4.8</version>
     </parent>
 
+    <!--properties>
+        <dm4.deploy.dir>/home/malted/source/mikro/deepamehta/bundle-deploy</dm4.deploy.dir>
+        <dm4.deploy.dir>/home/malted/Schreibtisch/DeepaMehta4/bundle-deploy</dm4.deploy.dir>
+        <dm4.deploy.dir>/home/malted/Downloads/deepamehta-4.8.1/bundle-deploy</dm4.deploy.dir>
+    </properties-->
+
     <dependencies>
         <dependency>
             <groupId>de.deepamehta</groupId>

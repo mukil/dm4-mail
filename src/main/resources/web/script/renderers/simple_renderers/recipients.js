@@ -16,7 +16,7 @@
             my_role_type_uri: 'dm4.core.child',
             others_role_type_uri: 'dm4.core.parent',
             others_topic_type_uri: parentUri
-        }).items[0]
+        })[0]
     }
 
     function getRecipientTopics(mailId) {
@@ -24,7 +24,7 @@
             assoc_type_uri: 'dm4.mail.recipient',
             my_role_type_uri: 'dm4.core.parent',
             others_role_type_uri: 'dm4.core.child'
-        }).items.sort(function (a, b) {
+        }).sort(function (a, b) {
             return (a.value < b.value) ? -1 : (a.value > b.value) ? 1 : 0
         })
     }
@@ -40,7 +40,7 @@
     }
 
     function getRecipientTypes() {
-        return dm4c.restc.request('GET', '/mail/recipient/types').items
+        return dm4c.restc.request('GET', '/mail/recipient/types')
     }
 
 

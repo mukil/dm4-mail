@@ -10,7 +10,7 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 
-import de.deepamehta.plugins.files.FilesService;
+import de.deepamehta.files.FilesService;
 
 class ImageCidEmbedment {
 
