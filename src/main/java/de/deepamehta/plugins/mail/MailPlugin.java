@@ -271,10 +271,10 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
     @Transactional
     public Topic upload(UploadedFile attachment) {
         log.info("Uploading Attachment " + attachment.getName());
-        createAttachmentDirectoryInFilerepo();
-        StoredFile file = fileService.storeFile(attachment, prefix() + File.separator + FILEREPO_ATTACHMENTS_SUBFOLDER);
-        String path = prefix() + File.separator + FILEREPO_ATTACHMENTS_SUBFOLDER + File.separator + file.getFileName();
-        return fileService.getFileTopic(path);
+        String folderPath = getAttachmentsDirectoryInFileRepo();
+        StoredFile file = fileService.storeFile(attachment, folderPath);
+        String filePath = folderPath + File.separator + file.getFileName();
+        return fileService.getFileTopic(filePath);
     }
 
     private String prefix() {
@@ -482,31 +482,33 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
         }
     }
 
-    /** Attachments must be uploaded. They are stored in a hardcoded of the resp. filerepo. **/
-    private void createAttachmentDirectoryInFilerepo() {
+    /**
+     * Constructs path to the "attachments" folder, either in a workspace or in a global file repository.
+     * @return String   Repository path for storing attachments.
+     */
+    private String getAttachmentsDirectoryInFileRepo() {
+        String folderPath = FILEREPO_ATTACHMENTS_SUBFOLDER; // global filerepo
+        if (!fileService.pathPrefix().equals("/")) { // add workspace specific path in front of image folder name
+            folderPath = fileService.pathPrefix() + File.separator + FILEREPO_ATTACHMENTS_SUBFOLDER;
+        }
         try {
             // check image file repository
-            ResourceInfo resourceInfo = fileService.getResourceInfo(prefix() + File.separator +
+            if (fileService.fileExists(folderPath)) {
+                ResourceInfo resourceInfo = fileService.getResourceInfo(fileService.pathPrefix() + File.separator +
                     FILEREPO_ATTACHMENTS_SUBFOLDER);
-            // depending on prefix() we check for an "images" folder in the global or workspace filerepo
-            if (resourceInfo.getItemKind() != ItemKind.DIRECTORY) {
-                String message = "MailPlugin: \"attachments\" storage directory in repo path " + fileService.getFile("/") +
-                        prefix() + File.separator + FILEREPO_ATTACHMENTS_SUBFOLDER + " can not be used";
-                throw new IllegalStateException(message);
+                if (resourceInfo.getItemKind() != ItemKind.DIRECTORY) {
+                    String message = "MailPlugin: \""+FILEREPO_ATTACHMENTS_SUBFOLDER+"\" directory in repo at " + folderPath + " can not be used";
+                    throw new IllegalStateException(message);
+                }
+            } else { // images subdirectory does not exist yet in repo
+                log.info("Creating the \""+FILEREPO_ATTACHMENTS_SUBFOLDER+"\" subfolder on the fly for new filerepo in " + folderPath+ "!");
+                // A (potential) workspace folder gets created no the fly, too (since #965).
+                fileService.createFolder(FILEREPO_ATTACHMENTS_SUBFOLDER, fileService.pathPrefix());
             }
-        } catch (WebApplicationException e) {
-            log.info("Created the \"attachments\" subfolder on the fly for new filerepo in " + fileService.getFile("/") +
-                    prefix() + File.separator + FILEREPO_ATTACHMENTS_SUBFOLDER + "!");
-            try {
-                fileService.createFolder(FILEREPO_ATTACHMENTS_SUBFOLDER, prefix());
-            } catch (RuntimeException ex) {
-                log.warning("RuntimeException caught during folder creation, presumably the folder " +
-                        "must already EXIST, so OK:" + ex.getMessage());
-            }
-            // catch fileService create request failed because of: folder exists
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+        return folderPath;
     }
 
     /**
