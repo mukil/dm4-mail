@@ -19,6 +19,7 @@ import de.deepamehta.files.ResourceInfo;
 import de.deepamehta.files.StoredFile;
 import de.deepamehta.files.UploadedFile;
 import de.deepamehta.plugins.mail.service.MailService;
+import de.deepamehta.workspaces.WorkspacesService;
 import java.io.File;
 import org.apache.commons.mail.EmailAttachment;
 import org.apache.commons.mail.EmailException;
@@ -50,7 +51,9 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
 
     // service references
     @Inject
-    private AccessControlService acService;
+    private AccessControlService accesscontrol;
+    @Inject
+    private WorkspacesService workspaces; // used in Migration3
     @Inject
     private FilesService fileService = null;
 
@@ -74,7 +77,7 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
 
     @Override
     public Association associateRecipient(long mailId, long addressId, RecipientType type) {
-        log.info("Associate " + mailId + " with recipient address " + addressId);
+        log.fine("Associate " + mailId + " with recipient address " + addressId);
         // ### create value of the recipient association (#593 ref?)
         ChildTopicsModel value = mf.newChildTopicsModel()//
                 .putRef(RECIPIENT_TYPE, type.getUri())//
@@ -124,7 +127,7 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
 
     @Override
     public Association associateSender(long mailId, long addressId) {
-        log.info("Associate Mail " + mailId + " with E-Mail Address Topic (identifying a Sender) " + addressId);
+        log.fine("Associate Mail " + mailId + " with E-Mail Address Topic (identifying a Sender) " + addressId);
 
         // create value of sender association (#593 ref?)
         ChildTopicsModel value = mf.newChildTopicsModel().putRef(EMAIL_ADDRESS, addressId);
@@ -164,7 +167,7 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
     @Path("/autocomplete/{term}")
     public List<TopicModel> search(@PathParam("term") String term) {
         String query = "*" + term + "*";
-        log.info("autocomplete " + query);
+        log.fine("Mail Contact Autocomplete query=" + query);
         return autocomplete.search(query);
     }
 
@@ -180,7 +183,7 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
     @POST
     @Path("/{mail}/copy")
     public Topic copyMail(@PathParam("mail") long mailId, @QueryParam("recipients") boolean includeRecipients) {
-        log.info("Copy mail " + mailId);
+        log.fine("Copy mail " + mailId);
         DeepaMehtaTransaction tx = dm4.beginTx();
         try {
             // 1 clone mail ..
@@ -245,7 +248,7 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
     @POST
     @Path("/write/{recipient}")
     public Topic writeTo(@PathParam("recipient") long recipientId) {
-        log.info("Write a mail to recipient " + recipientId);
+        log.fine("Write a mail to recipient " + recipientId);
         DeepaMehtaTransaction tx = dm4.beginTx();
         try {
             Topic mail = dm4.createTopic(mf.newTopicModel(MAIL));
@@ -270,7 +273,7 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
     @Produces(MediaType.APPLICATION_JSON)
     @Transactional
     public Topic upload(UploadedFile attachment) {
-        log.info("Uploading Attachment " + attachment.getName());
+        log.fine("Uploading Attachment " + attachment.getName());
         String folderPath = getAttachmentsDirectoryInFileRepo();
         StoredFile file = fileService.storeFile(attachment, folderPath);
         String filePath = folderPath + File.separator + file.getFileName();
@@ -370,7 +373,7 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
         // Latest issue was ..
         // "Caused by: javax.activation.UnsupportedDataTypeException: no object DCH for MIME type multipart/mixed;"
         Thread.currentThread().setContextClassLoader(MailPlugin.class.getClassLoader());
-        log.info("BeforeSend: Set ClassLoader to " + Thread.currentThread().getContextClassLoader().toString());
+        log.fine("BeforeSend: Set ClassLoader to " + Thread.currentThread().getContextClassLoader().toString());
 
         StatusReport statusReport = new StatusReport(mail.getTopic());
 
@@ -459,7 +462,7 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
             } finally {
                 // Fix: Classloader issue we have in OSGi since using Pax web
                 Thread.currentThread().setContextClassLoader(CoreService.class.getClassLoader());
-                log.info("AfterSend: Set ClassLoader back " + Thread.currentThread().getContextClassLoader().toString());
+                log.fine("AfterSend: Set ClassLoader back " + Thread.currentThread().getContextClassLoader().toString());
             }
         }
 
@@ -476,7 +479,7 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
     }
 
     private void configureIfReady() {
-        if (isInitialized && acService != null && fileService != null) {
+        if (isInitialized && accesscontrol != null && fileService != null) {
             loadConfiguration();
             cidEmbedment = new ImageCidEmbedment(fileService);
         }
@@ -524,8 +527,8 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
         RelatedTopic senderContact = null;
 
         // 1) get default sender for user account
-        String username = acService.getCreator(mail.getId());
-        Topic creatorName = acService.getUsernameTopic(username);
+        String username = accesscontrol.getCreator(mail.getId());
+        Topic creatorName = accesscontrol.getUsernameTopic(username);
         if (creatorName != null) {
             creator = creatorName.getRelatedTopic(null, CHILD, PARENT, USER_ACCOUNT);
         }
