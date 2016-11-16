@@ -4,7 +4,7 @@ SMTP Mail plugin
 
 ## Requirements
 
-  * [DeepaMehta 4](http://github.com/jri/deepamehta) 4.7
+  * [DeepaMehta 4](http://github.com/jri/deepamehta) 4.8
 
 ## Usage
 
@@ -50,6 +50,11 @@ You can also have a look at the [Keyboard interaction](http://api.jqueryui.com/a
 ![write mail](https://github.com/mukil/dm4-mail/raw/master/doc/mail.png)
 
 ### Release History
+
+0.3.2, Nov 16, 2016
+
+* Adapted to DeepaMehta 4.8 (attachments dialog, completed Migration3)
+* Revised labels in mail Form
 
 0.3.1, Apr 25, 2016
 
