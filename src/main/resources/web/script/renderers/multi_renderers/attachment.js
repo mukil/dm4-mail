@@ -20,10 +20,10 @@
             getValues: function () {
                 var values = []
                 $.each(topics, function (id, topic) {
-                    values.push(dm4c.REF_PREFIX + id)
+                    values.push(dm4c.REF_ID_PREFIX + id)
                 })
                 $.each(removed, function (id, topic) {
-                    values.push(dm4c.DEL_PREFIX + id)
+                    values.push(dm4c.DEL_ID_PREFIX + id)
                 })
                 return values
             },
@@ -95,7 +95,7 @@
             })
         }
 
-        return dm4c.ui.button({on_click: add, icon: 'Add Attachments'})//.css('display', 'inline-block')
+        return dm4c.ui.button({on_click: add, icon: 'arrowthick-1-n', label:'Upload File'})//.css('display', 'inline-block')
     }
 
 
@@ -107,6 +107,7 @@
             dm4c.render.field_label('Attachments', $parent)
             $.each(pages, function (p, page) {
                 if (page.object.id !== -1) {
+                    console.log("Attachment Multi Renderer, Render", page.object, "P", p, "Overall Pages", pages)
                     $parent.append(createAttachmentLink(page.object))
                 }
             })

@@ -2,14 +2,14 @@
 {
     "topic_types": [
         {
-            "value": "Body",
-            "uri": "dm4.mail.body",
+            "value":    "Body",
+            "uri":      "dm4.mail.body",
             "data_type_uri": "dm4.core.html",
             "index_mode_uris": [ "dm4.core.fulltext" ]
         },
         {
-            "value": "Sent Date",
-            "uri": "dm4.mail.date",
+            "value":    "Sent Date",
+            "uri":      "dm4.mail.date",
             "data_type_uri": "dm4.core.text",
             "view_config_topics": [
                 {
@@ -21,8 +21,8 @@
             ]
         },
         {
-            "value": "From",
-            "uri": "dm4.mail.from",
+            "value":    "Mail Contact (From)",
+            "uri":      "dm4.mail.from",
             "data_type_uri": "dm4.core.boolean",
             "view_config_topics": [
                 { # dummy field to hold the renderer, that directly creates the sender association
@@ -91,25 +91,25 @@
             ]
         },
         {
-            "value": "Signature",
-            "uri": "dm4.mail.signature",
+            "value":    "Signature",
+            "uri":      "dm4.mail.signature",
             "data_type_uri": "dm4.core.composite",
             "label_config": [ "dm4.mail.signature.name" ],
             "assoc_defs": [
                 {
-                    "child_type_uri":   "dm4.mail.signature.name",
-                    "child_cardinality_uri":  "dm4.core.one",
-                    "assoc_type_uri":        "dm4.core.composition_def"
+                    "child_type_uri":           "dm4.mail.signature.name",
+                    "child_cardinality_uri":    "dm4.core.one",
+                    "assoc_type_uri":           "dm4.core.composition_def"
                 },
                 {
-                    "child_type_uri":   "dm4.mail.from",
-                    "child_cardinality_uri":  "dm4.core.one",
-                    "assoc_type_uri":        "dm4.core.composition_def"
+                    "child_type_uri":           "dm4.mail.from",
+                    "child_cardinality_uri":    "dm4.core.one",
+                    "assoc_type_uri":           "dm4.core.composition_def"
                 },
                 {
-                    "child_type_uri":   "dm4.mail.body",
-                    "child_cardinality_uri":  "dm4.core.one",
-                    "assoc_type_uri":        "dm4.core.composition_def"
+                    "child_type_uri":           "dm4.mail.body",
+                    "child_cardinality_uri":    "dm4.core.one",
+                    "assoc_type_uri":           "dm4.core.composition_def"
                 }
             ],
             "view_config_topics": [
@@ -124,26 +124,26 @@
             ]
         },
         {
-            "value": "Mail",
-            "uri": "dm4.mail",
+            "value":    "Mail",
+            "uri":      "dm4.mail",
             "data_type_uri": "dm4.core.composite",
             "label_config": [ "dm4.mail.subject" ],
             "assoc_defs": [
                 {
-                    "child_type_uri":   "dm4.mail.subject",
-                    "child_cardinality_uri":  "dm4.core.one",
-                    "assoc_type_uri":        "dm4.core.composition_def"
+                    "child_type_uri":           "dm4.mail.subject",
+                    "child_cardinality_uri":    "dm4.core.one",
+                    "assoc_type_uri":           "dm4.core.composition_def"
                 },
                 {
-                    "child_type_uri":   "dm4.mail.from",
-                    "child_cardinality_uri":  "dm4.core.one",
-                    "assoc_type_uri":        "dm4.core.composition_def"
+                    "child_type_uri":           "dm4.mail.from",
+                    "child_cardinality_uri":    "dm4.core.one",
+                    "assoc_type_uri":           "dm4.core.composition_def"
                 },
                 {
-                    "child_type_uri":   "dm4.mail.signature",
-                    "child_cardinality_uri":  "dm4.core.many", # should be one
-                    "parent_cardinality_uri": "dm4.core.many",
-                    "assoc_type_uri":        "dm4.core.aggregation_def",
+                    "child_type_uri":           "dm4.mail.signature",
+                    "child_cardinality_uri":    "dm4.core.many", # should be one
+                    "parent_cardinality_uri":   "dm4.core.many",
+                    "assoc_type_uri":           "dm4.core.aggregation_def",
                     "view_config_topics": [ # composite does not support custom renderer,
                         { # use a many aggregation to inject a renderer that only supports one child
                             "type_uri": "dm4.webclient.view_config",

@@ -29,7 +29,6 @@
     }
 
     dm4c.add_listener('render_mail_signature', function (signatureId) {
-        console.log("Received Render Mail Signature Event", signatureId)
         var signature = getSignature(signatureId)
         // FIXME scope the selection of the signature element
         $('.signature').empty().html(getSignatureBody(signature))
@@ -42,11 +41,9 @@
     dm4c.add_simple_renderer('dm4.mail.signature.preview', {
         render_info: function (model, $parent) {
             // ### is dummy field (can just be rendered part of its parent object)
-            console.log("Info Signature Parent, Adding Model to Parent", model.parent.object)
             addSignatureOfMail(model.parent.object, $parent)
         },
         render_form: function (model, $parent) {
-            console.log("Form Signature Parent, Adding Model to Parent", model.parent.object)
             addSignatureOfMail(model.parent.object, $parent)
             return function () {
                 return true // set dummy field after edit

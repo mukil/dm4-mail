@@ -35,6 +35,7 @@
         render_form: function (pages, $parent, level) {
             var deselectedId = -1
             var selectedId = getSignatureIdOfMail(pages[0].parent.object)
+            dm4c.render.field_label("Signature", $parent)
             var menu = createSignatureMenu(selectedId, function (signature) {
                 // value contains a new selection?
                 if (selectedId !== signature.value) {

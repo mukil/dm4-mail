@@ -32,11 +32,11 @@
             <artifactId>deepamehta-files</artifactId>
             <version>4.8</version>
         </dependency>
-        <!--dependency>
+        <dependency>
             <groupId>de.deepamehta</groupId>
-            <artifactId>dm47-deepamehta-images</artifactId>
-            <version>0.9.6</version>
-        </dependency-->
+            <artifactId>dm48-images</artifactId>
+            <version>0.9.10</version>
+        </dependency>
         <dependency>
             <groupId>javax.mail</groupId>
             <artifactId>mail</artifactId>
@@ -65,6 +65,14 @@
 
     <build>
         <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <version>2.9.1</version>
+                <configuration>
+                    <failOnError>false</failOnError>
+                </configuration>
+            </plugin>
             <plugin>
                 <groupId>org.apache.felix</groupId>
                 <artifactId>maven-bundle-plugin</artifactId>

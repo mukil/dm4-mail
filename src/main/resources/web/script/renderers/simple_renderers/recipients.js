@@ -187,6 +187,7 @@
             }
         },
         render_form: function (model, $parent) {
+            dm4c.render.field_label(model, $parent)
             var mail = model.parent.object
             var pluginResults = dm4c.fire_event('render_mail_recipients')
 
