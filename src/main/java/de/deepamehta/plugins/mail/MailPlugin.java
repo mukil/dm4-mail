@@ -308,13 +308,13 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
      */
     @GET
     @Path("/search/parents")
-    public List<Topic> listSearchParentTypes() {
-        Collection<Topic> parents = getSearchParentTypes();
-        return new ArrayList<Topic>(parents);
+    public List<RelatedTopic> listSearchParentTypes() {
+        Collection<RelatedTopic> parents = getSearchParentTypes();
+        return new ArrayList<RelatedTopic>(parents);
     }
 
     @Override
-    public Collection<Topic> getSearchParentTypes() {
+    public Collection<RelatedTopic> getSearchParentTypes() {
         return config.getSearchParentTypes();
     }
 
@@ -328,7 +328,7 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
     @GET
     @Path("/config/load")
     public Topic loadConfiguration() {
-        log.info("Load mail configuration");
+        log.info("Load mail plugin configuration cache");
         config = new MailConfigurationCache(dm4);
         autocomplete = new Autocomplete(dm4, config);
         return config.getTopic();
@@ -479,7 +479,7 @@ public class MailPlugin extends PluginActivator implements MailService, PostCrea
     }
 
     private void configureIfReady() {
-        if (isInitialized && accesscontrol != null && fileService != null) {
+        if (isInitialized) {
             loadConfiguration();
             cidEmbedment = new ImageCidEmbedment(fileService);
         }

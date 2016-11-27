@@ -8,6 +8,7 @@ import java.util.List;
 import org.apache.commons.mail.EmailException;
 
 import de.deepamehta.core.Association;
+import de.deepamehta.core.RelatedTopic;
 import de.deepamehta.core.Topic;
 import de.deepamehta.plugins.mail.Mail;
 import de.deepamehta.plugins.mail.RecipientType;
@@ -17,7 +18,9 @@ public interface MailService {
 
     // DM 4 Core URIs
     static final String AGGREGATION = "dm4.core.aggregation";
+    static final String AGGREGATION_DEFINITION = "dm4.core.aggregation_def";
     static final String COMPOSITION = "dm4.core.composition";
+    static final String COMPOSITION_DEFINITION = "dm4.core.composition_def";
     static final String CHILD = "dm4.core.child";
     static final String CHILD_TYPE = "dm4.core.child_type";
     static final String TOPIC_TYPE = "dm4.core.topic_type";
@@ -48,7 +51,7 @@ public interface MailService {
      * 
      * @return parent search types.
      */
-    Collection<Topic> getSearchParentTypes();
+    Collection<RelatedTopic> getSearchParentTypes();
 
     /**
      * Update or create a mail recipient association.
