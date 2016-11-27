@@ -13,6 +13,11 @@ import java.util.logging.Logger;
 import de.deepamehta.core.RelatedTopic;
 import de.deepamehta.core.Topic;
 import de.deepamehta.core.service.CoreService;
+import static de.deepamehta.plugins.mail.service.MailService.AGGREGATION;
+import static de.deepamehta.plugins.mail.service.MailService.CHILD_TYPE;
+import static de.deepamehta.plugins.mail.service.MailService.PARENT_TYPE;
+import static de.deepamehta.plugins.mail.service.MailService.TOPIC_TYPE;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -34,7 +39,7 @@ class MailConfigurationCache {
     private boolean defaultSenderIsNull = false;
     private List<Topic> recipientTypes;
     private Set<String> recipientTypeUris;
-    private Map<String, Topic> searchParentTypes;
+    private Map<RelatedTopic, Topic> searchParentTypes;
     private List<RelatedTopic> searchTypes;
     private Set<String> searchTypeUris;
     private String smtpHost = null;
@@ -112,23 +117,26 @@ class MailConfigurationCache {
         return recipientTypeUris;
     }
 
-    public Collection<Topic> getSearchParentTypes() {
-        return revealSearchParentTypes().values();
+    public Collection<RelatedTopic> getSearchParentTypes() {
+        return revealSearchParentTypes().keySet();
     }
 
     public List<RelatedTopic> getSearchTypes() {
         if (searchTypes == null) {
-            log.fine("Get search types");
+            log.info("Initializing search types in mail plugin configuration cache");
             // get aggregated composite search types
             // FIXME use a specific association type and field renderer
             searchTypes = getConfiguration().getRelatedTopics(AGGREGATION, PARENT, CHILD, TOPIC_TYPE);
+            for (RelatedTopic searchType : searchTypes) {
+                log.info("=> search type " + searchType);
+            }
         }
         return searchTypes;
     }
 
     public Set<String> getSearchTypeUris() {
         if (searchTypeUris == null) {
-            log.fine("Get search type URIs");
+            log.info("Get search type URIs");
             searchTypeUris = new LinkedHashSet<String>();
             for (Topic topic : getSearchTypes()) {
                 searchTypeUris.add(topic.getUri());
@@ -146,15 +154,21 @@ class MailConfigurationCache {
         return smtpHost;
     }
 
-    private Map<String, Topic> revealSearchParentTypes() {
+    private Map<RelatedTopic, Topic> revealSearchParentTypes() {
         if (searchParentTypes == null) {
-            log.fine("Get search parent types");
-            searchParentTypes = new HashMap<String, Topic>();
+            searchParentTypes = new HashMap<RelatedTopic, Topic>();
             for (Topic type : getSearchTypes()) {
-                searchParentTypes.put(type.getUri(), type.getRelatedTopic(null,//
-                        CHILD_TYPE, PARENT_TYPE, TOPIC_TYPE));
+                List assocTypeUris = new ArrayList();
+                assocTypeUris.add(AGGREGATION_DEFINITION);
+                assocTypeUris.add(COMPOSITION_DEFINITION);
+                List<RelatedTopic> parents = type.getRelatedTopics(assocTypeUris, CHILD_TYPE, PARENT_TYPE, null);
+                for (RelatedTopic parentType : parents) {
+                    log.info("Adding \"" + parentType + "\"");
+                    searchParentTypes.put(parentType, type);
+                }
             }
         }
+        log.info("Identified " + searchParentTypes.size() + " search parent types to get a \"Write Mail\" command");
         return searchParentTypes;
     }
 
