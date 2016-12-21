@@ -51,6 +51,11 @@ You can also have a look at the [Keyboard interaction](http://api.jqueryui.com/a
 
 ### Release History
 
+0.3.3, Dec 20, 2016
+
+* Maintenance release: Make configurable search types work with dm4-gamechangers
+  (Their model using of "Person Name" indeed broke this plugins type def accessor logic)
+
 0.3.2, Nov 16, 2016
 
 * Adapted to DeepaMehta 4.8 (attachments dialog, completed Migration3)
